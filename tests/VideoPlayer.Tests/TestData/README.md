@@ -1,0 +1,3 @@
+`speech.mkv` is a 57.6-second black video with two mono AAC audio streams: silence first, English synthesized speech second. `speech-reference.srt` contains the original speech intervals. The original dialogue was synthesized locally with the Windows Microsoft David voice, with varied pauses between twelve sentences. No movie or television recording is included.
+
+The speech tests shift/scale the reference cues and measure the recovered timing to within 450 ms. The silent first stream verifies that synchronization honors the selected audio stream and does not accept a silence-only result. The Windows `SubtitleAutomationCheck` tool reuses these fixtures to exercise the actual player and canceled workers.

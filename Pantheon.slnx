@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/VideoPlayer.Core/VideoPlayer.Core.csproj" />
+    <Project Path="src/VideoPlayer/VideoPlayer.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VideoPlayer.Tests/VideoPlayer.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/HdrScreenshotCheck/HdrScreenshotCheck.csproj" />
+    <Project Path="tools/MpvDecodeBenchmark/MpvDecodeBenchmark.csproj" />
+    <Project Path="tools/QueuePresentationBenchmark/QueuePresentationBenchmark.csproj" />
+    <Project Path="tools/SubtitleAutomationCheck/SubtitleAutomationCheck.csproj" />
+  </Folder>
+</Solution>

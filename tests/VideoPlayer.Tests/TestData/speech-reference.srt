@@ -1,0 +1,48 @@
+﻿1
+00:00:02,000 --> 00:00:05,564
+The train will arrive at the station in five minutes.
+
+2
+00:00:07,264 --> 00:00:09,943
+Please remember to bring your camera.
+
+3
+00:00:10,843 --> 00:00:14,112
+We walked through the quiet streets after the rain.
+
+4
+00:00:16,312 --> 00:00:19,311
+There is a small house at the end of the road.
+
+5
+00:00:20,411 --> 00:00:23,590
+I could hear somebody knocking on the front door.
+
+6
+00:00:26,190 --> 00:00:29,189
+What time does the museum open tomorrow?
+
+7
+00:00:29,889 --> 00:00:32,893
+The old bridge crosses a very deep river.
+
+8
+00:00:34,393 --> 00:00:37,232
+She opened the window and looked outside.
+
+9
+00:00:39,232 --> 00:00:41,891
+All the lights in the city were shining.
+
+10
+00:00:42,691 --> 00:00:45,785
+Our friends are waiting for us near the park.
+
+11
+00:00:48,185 --> 00:00:51,224
+This is a beautiful morning for a long walk.
+
+12
+00:00:52,524 --> 00:00:55,653
+We finally found the answer to the question.
+

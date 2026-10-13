@@ -1,0 +1,33 @@
+**/bin/
+**/obj/
+.vs/
+.idea/
+/work/
+/dist/
+/artifacts/
+
+# NuGet packages and publish artifacts
+*.nupkg
+*.snupkg
+*.publishsettings
+
+# .NET and Visual Studio user-specific files
+*.user
+*.csproj.user
+*.suo
+*.userosscache
+*.sln.docstates
+**/TestResults/
+
+# IDE and operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local notes and credentials
+/todo.md
+.env
+.env.*
+!.env.example
+*.pem
+*.key
