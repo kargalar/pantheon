@@ -417,7 +417,9 @@ internal sealed class SettingsWindow : Window
                 (ShortcutDefaults.NextFrame, UiText.NextFrame),
                 (ShortcutDefaults.PreviousChapter, UiText.PreviousChapter),
                 (ShortcutDefaults.NextChapter, UiText.NextChapter)]),
-            (UiText.Interface, [(ShortcutDefaults.ToggleSettings, UiText.OpenCloseSettings)]),
+            (UiText.Interface, [
+                (ShortcutDefaults.ToggleSettings, UiText.OpenCloseSettings),
+                (ShortcutDefaults.CloseWindow, UiText.CloseWindow)]),
             (UiText.VideoAndSubtitles, [
                 (ShortcutDefaults.OpenVideo, UiText.OpenVideo),
             (ShortcutDefaults.AddSubtitle, UiText.AddExternalSubtitle),

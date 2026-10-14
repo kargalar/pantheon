@@ -1,0 +1,788 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e10]:
+          - generic [ref=e11]: Recall
+          - generic [ref=e12]: Personal memory
+        - generic [ref=e13]:
+          - textbox "Search activities..." [ref=e15]
+          - combobox [ref=e18]:
+            - option "All Time" [selected]
+            - option "Today"
+            - option "Last 7 Days"
+            - option "Last 30 Days"
+          - combobox [ref=e19]:
+            - option "100 items"
+            - option "500 items" [selected]
+            - option "1000 items"
+            - option "5000 items"
+          - combobox [ref=e20]:
+            - option "All Applications" [selected]
+            - option "007FirstLight.exe"
+            - option "7zG.exe"
+            - option "A Difficult Game About Climbing.exe"
+            - option "AIDictation.exe"
+            - option "Adobe Premiere Pro.exe"
+            - option "AlanWake2.exe"
+            - option "AltSnap.exe"
+            - option "Animal Well.exe"
+            - option "Antigravity IDE.exe"
+            - option "Antigravity IDE.tmp"
+            - option "Antigravity-x64.exe"
+            - option "Antigravity.exe"
+            - option "AntigravitySetup-stable-def9583aef9852ff94cb0dea16ede9bb6b095b30.tmp"
+            - option "AntigravitySetup-stable-e0b7a2bcf575cfba10528c4e7c10bd3ce2d7769a.tmp"
+            - option "ApplicationFrameHost.exe"
+            - option "Arkhe.Windows.exe"
+            - option "BTD-Win64-Shipping.exe"
+            - option "Bambu_Studio_win-v02.06.00.51-20260417160415.exe"
+            - option "Bodycam-Win64-Shipping.exe"
+            - option "CI3Xmas.exe"
+            - option "CI4Easter.exe"
+            - option "ChatGPT.exe"
+            - option "ChickenInvaders.exe"
+            - option "Clanfolk.exe"
+            - option "Code.exe"
+            - option "Codex Account Manager.exe"
+            - option "Codex Installer.exe"
+            - option "Codex.exe"
+            - option "ContextMenuManager.NET.4.0.exe"
+            - option "Creative Cloud.exe"
+            - option "DS4Windows.exe"
+            - option "Dawnwalker.exe"
+            - option "DeepL.exe"
+            - option "Docker Desktop Installer.exe"
+            - option "Docker Desktop.exe"
+            - option "Dolphin Anty.exe"
+            - option "EarTrumpet.exe"
+            - option "EcMenu.exe"
+            - option "EcMenu_x64.exe"
+            - option "EpicGamesLauncher.exe"
+            - option "Everything.exe"
+            - option "FL64.exe"
+            - option "FileConverter.exe"
+            - option "FluentFlyout.exe"
+            - option "Frame.exe"
+            - option "Fusion360.exe"
+            - option "GitHubDesktop.exe"
+            - option "Godot_v4.7-stable_mono_win64.exe"
+            - option "Godot_v4.7.1-stable_win64.exe"
+            - option "Godot_v4.7.2-stable_win64.exe"
+            - option "GoogleDriveFS.exe"
+            - option "Hollow Knight.exe"
+            - option "How to Fish.exe"
+            - option "IDMan.exe"
+            - option "INS9DF9.tmp"
+            - option "Jan.exe"
+            - option "KeygenGUI.exe"
+            - option "LM Studio.exe"
+            - option "LeagueLauncher.exe"
+            - option "LockApp.exe"
+            - option "LosslessScaling.exe"
+            - option "M365Copilot.exe"
+            - option "MafiaTheOldCountry.exe"
+            - option "ManicTimeClient.exe"
+            - option "Microsoft.CmdPal.UI.exe"
+            - option "MultiMonitorTool.exe"
+            - option "NVDisplay.Container.exe"
+            - option "NVIDIA App.exe"
+            - option "Notepad.exe"
+            - option "OBS-Studio-32.2.2-Windows-x64-Installer.exe"
+            - option "Obsidian.exe"
+            - option "OllamaSetup.tmp"
+            - option "OpenWhispr.exe"
+            - option "OpenWith.exe"
+            - option "Panteon.exe"
+            - option "Pantheon.exe"
+            - option "Phonopolis.exe"
+            - option "Photos.exe"
+            - option "Photoshop.exe"
+            - option "PickerHost.exe"
+            - option "PotPlayerMini64.exe"
+            - option "PowerToys.FancyZonesEditor.exe"
+            - option "PowerToys.FileLocksmithUI.exe"
+            - option "PowerToys.PowerDisplay.exe"
+            - option "PowerToys.PowerOCR.exe"
+            - option "PowerToys.Settings.exe"
+            - option "Prey.exe"
+            - option "ProtonVPN.Client.exe"
+            - option "RimWorldWin64.exe"
+            - option "SearchHost.exe"
+            - option "Setup.tmp"
+            - option "ShareX.exe"
+            - option "ShellExperienceHost.exe"
+            - option "ShellHost.exe"
+            - option "Sky Force Reloaded.exe"
+            - option "Spotify.exe"
+            - option "StartMenuExperienceHost.exe"
+            - option "SteamSetup.exe"
+            - option "Superwhisper.exe"
+            - option "System Idle"
+            - option "SystemPropertiesAdvanced.exe"
+            - option "TP_ThirdPerson.exe"
+            - option "Taskmgr.exe"
+            - option "Telegram.exe"
+            - option "They Killed Your Cat.exe"
+            - option "TrafficMonitor.exe"
+            - option "Turmoil.exe"
+            - option "Twinkle Tray.exe"
+            - option "Un.exe"
+            - option "Un_A.exe"
+            - option "Unity Hub.exe"
+            - option "Unity.exe"
+            - option "Unknown"
+            - option "UnrealEditor.exe"
+            - option "VSCodium.exe"
+            - option "VideoPlayer.exe"
+            - option "VirtualBox.exe"
+            - option "VirtualBoxVM.exe"
+            - option "Wand.exe"
+            - option "WeMod Mafia The Old Country Setup.exe"
+            - option "WerFault.exe"
+            - option "WhatsApp.Root.exe"
+            - option "WhisperDictation.exe"
+            - option "WindowsTerminal.exe"
+            - option "Wispr Flow.exe"
+            - option "WolfNewOrder_x64.exe"
+            - option "_iu14D2N.tmp"
+            - option "antigravity_tools.exe"
+            - option "architecturestudio.exe"
+            - option "archive_manager_v3.exe"
+            - option "auth.exe"
+            - option "bambu-studio.exe"
+            - option "blender.exe"
+            - option "booklibrary.exe"
+            - option "brave.exe"
+            - option "cheatengine-x86_64-SSE4-AVX2.exe"
+            - option "chrome.exe"
+            - option "claude.exe"
+            - option "cmd.exe"
+            - option "daidalos.exe"
+            - option "dllhost.exe"
+            - option "dotnet.exe"
+            - option "dwm.exe"
+            - option "eu5.exe"
+            - option "explorer.exe"
+            - option "firefox.exe"
+            - option "firstperson.exe"
+            - option "flet.exe"
+            - option "flstudio_win64_26.1.7.5653.exe"
+            - option "frame-videoedit.exe"
+            - option "game.exe"
+            - option "gamegrow.exe"
+            - option "gametycoon.exe"
+            - option "geographymapp.exe"
+            - option "git-credential-manager.exe"
+            - option "goodbyedpi.exe"
+            - option "grand_strategy.exe"
+            - option "grando-stratego.exe"
+            - option "handy.exe"
+            - option "hearthland.exe"
+            - option "hearthland_engine.exe"
+            - option "hl.exe"
+            - option "inno_updater.exe"
+            - option "inventory_manager.exe"
+            - option "java.exe"
+            - option "javaw.exe"
+            - option "kanban.exe"
+            - option "kargalar-model-studio.exe"
+            - option "kora.exe"
+            - option "localsend_app.exe"
+            - option "metin2client.exe"
+            - option "mimar.exe"
+            - option "mmc.exe"
+            - option "msedge.exe"
+            - option "msiexec.exe"
+            - option "msrdc.exe"
+            - option "not-defteri.exe"
+            - option "nota.exe"
+            - option "nvcontainer.exe"
+            - option "obs64.exe"
+            - option "ollama app.exe"
+            - option "opera.exe"
+            - option "orpheus.exe"
+            - option "planetfall-survivors-windows.exe"
+            - option "powershell.exe"
+            - option "python.exe"
+            - option "qbittorrent.exe"
+            - option "qemu-system-x86_64.exe"
+            - option "rawtherapee.exe"
+            - option "rundll32.exe"
+            - option "scrcpy.exe"
+            - option "setup.exe"
+            - option "setup.tmp"
+            - option "sop.exe"
+            - option "sound_record.exe"
+            - option "space-survivor-2d.exe"
+            - option "space-survivor-3d.exe"
+            - option "space-survivor.exe"
+            - option "steamwebhelper.exe"
+            - option "streamer.exe"
+            - option "studio64.exe"
+            - option "ubberdubber.exe"
+            - option "witcher3.exe"
+            - option "wixstdba.exe"
+            - option "yasb.exe"
+          - button "Refresh" [ref=e21] [cursor=pointer]
+      - generic [ref=e24]: Workspace
+      - generic [ref=e25]:
+        - button "Timeline" [ref=e26] [cursor=pointer]
+        - button "Statistics" [ref=e27] [cursor=pointer]
+        - button "Categories" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: Local & private
+          - generic [ref=e36]: Your activity stays on this device.
+        - button "Settings" [ref=e37] [cursor=pointer]
+  - main [ref=e42]:
+    - generic [ref=e43]:
+      - generic [ref=e44]:
+        - paragraph [ref=e45]: Your digital memory
+        - heading "Activity timeline" [level=1] [ref=e46]
+        - paragraph [ref=e47]: A calm, searchable view of the moments captured on your device.
+      - generic [ref=e48]: Recorder active
+    - generic [ref=e50]:
+      - generic [ref=e51]:
+        - generic [ref=e52]:
+          - generic [ref=e53]: Captured moments
+          - heading "Recent activity" [level=2] [ref=e54]
+        - generic [ref=e55]: Use the timeline to travel through your day
+      - generic [ref=e56]:
+        - generic [ref=e57] [cursor=pointer]:
+          - img "Screenshot" [ref=e58]
+          - generic [ref=e59]: System was Idle (No Screenshot)
+          - generic [ref=e60]: Click to view full screen
+        - generic [ref=e64]:
+          - generic [ref=e65]:
+            - generic [ref=e66]: System Idle
+            - generic [ref=e67]: System Idle
+          - generic [ref=e69]:
+            - generic [ref=e70]: Tue, Oct 13, 05:22:27 PM
+            - generic [ref=e72]: 500 / 500
+        - generic [ref=e73]:
+          - slider [ref=e74] [cursor=pointer]:
+            - generic "System Idle - Mon, Oct 12, 09:28:10 PM" [ref=e75]
+            - generic "System Idle - Mon, Oct 12, 09:29:10 PM" [ref=e76]
+            - generic "System Idle - Mon, Oct 12, 09:30:10 PM" [ref=e77]
+            - generic "System Idle - Mon, Oct 12, 09:31:10 PM" [ref=e78]
+            - generic "System Idle - Mon, Oct 12, 09:32:10 PM" [ref=e79]
+            - generic "System Idle - Mon, Oct 12, 09:33:10 PM" [ref=e80]
+            - generic "System Idle - Mon, Oct 12, 09:34:10 PM" [ref=e81]
+            - generic "System Idle - Mon, Oct 12, 09:35:10 PM" [ref=e82]
+            - generic "System Idle - Mon, Oct 12, 09:36:10 PM" [ref=e83]
+            - generic "System Idle - Mon, Oct 12, 09:37:10 PM" [ref=e84]
+            - generic "System Idle - Mon, Oct 12, 09:38:10 PM" [ref=e85]
+            - generic "System Idle - Mon, Oct 12, 09:39:10 PM" [ref=e86]
+            - generic "System Idle - Mon, Oct 12, 09:40:10 PM" [ref=e87]
+            - generic "System Idle - Mon, Oct 12, 09:41:10 PM" [ref=e88]
+            - generic "System Idle - Mon, Oct 12, 09:42:10 PM" [ref=e89]
+            - generic "System Idle - Mon, Oct 12, 09:43:10 PM" [ref=e90]
+            - generic "System Idle - Mon, Oct 12, 09:44:10 PM" [ref=e91]
+            - generic "System Idle - Mon, Oct 12, 09:45:10 PM" [ref=e92]
+            - generic "System Idle - Mon, Oct 12, 09:46:10 PM" [ref=e93]
+            - generic "System Idle - Mon, Oct 12, 09:47:10 PM" [ref=e94]
+            - generic "System Idle - Mon, Oct 12, 09:48:10 PM" [ref=e95]
+            - generic "System Idle - Mon, Oct 12, 09:49:10 PM" [ref=e96]
+            - generic "System Idle - Mon, Oct 12, 09:50:10 PM" [ref=e97]
+            - generic "System Idle - Mon, Oct 12, 09:51:10 PM" [ref=e98]
+            - generic "Code.exe - Mon, Oct 12, 09:52:11 PM" [ref=e99]
+            - generic "Code.exe - Mon, Oct 12, 09:53:11 PM" [ref=e100]
+            - generic "Code.exe - Mon, Oct 12, 09:54:11 PM" [ref=e101]
+            - generic "LockApp.exe - Mon, Oct 12, 09:55:12 PM" [ref=e102]
+            - generic "System Idle - Mon, Oct 12, 09:56:12 PM" [ref=e103]
+            - generic "System Idle - Mon, Oct 12, 09:57:12 PM" [ref=e104]
+            - generic "System Idle - Mon, Oct 12, 09:58:12 PM" [ref=e105]
+            - generic "System Idle - Mon, Oct 12, 09:59:12 PM" [ref=e106]
+            - generic "System Idle - Mon, Oct 12, 10:00:12 PM" [ref=e107]
+            - generic "System Idle - Mon, Oct 12, 10:01:12 PM" [ref=e108]
+            - generic "System Idle - Mon, Oct 12, 10:02:12 PM" [ref=e109]
+            - generic "System Idle - Mon, Oct 12, 10:03:12 PM" [ref=e110]
+            - generic "System Idle - Mon, Oct 12, 10:04:12 PM" [ref=e111]
+            - generic "System Idle - Mon, Oct 12, 10:05:13 PM" [ref=e112]
+            - generic "System Idle - Mon, Oct 12, 10:06:13 PM" [ref=e113]
+            - generic "System Idle - Mon, Oct 12, 10:07:13 PM" [ref=e114]
+            - generic "System Idle - Mon, Oct 12, 10:08:13 PM" [ref=e115]
+            - generic "System Idle - Mon, Oct 12, 10:09:13 PM" [ref=e116]
+            - generic "System Idle - Mon, Oct 12, 10:10:13 PM" [ref=e117]
+            - generic "System Idle - Mon, Oct 12, 10:11:13 PM" [ref=e118]
+            - generic "System Idle - Mon, Oct 12, 10:12:13 PM" [ref=e119]
+            - generic "System Idle - Mon, Oct 12, 10:13:13 PM" [ref=e120]
+            - generic "System Idle - Mon, Oct 12, 10:14:13 PM" [ref=e121]
+            - generic "System Idle - Mon, Oct 12, 10:15:13 PM" [ref=e122]
+            - generic "System Idle - Mon, Oct 12, 10:16:13 PM" [ref=e123]
+            - generic "System Idle - Mon, Oct 12, 10:17:13 PM" [ref=e124]
+            - generic "System Idle - Mon, Oct 12, 10:18:13 PM" [ref=e125]
+            - generic "System Idle - Mon, Oct 12, 10:19:13 PM" [ref=e126]
+            - generic "System Idle - Mon, Oct 12, 10:20:13 PM" [ref=e127]
+            - generic "Code.exe - Mon, Oct 12, 10:21:13 PM" [ref=e128]
+            - generic "chrome.exe - Mon, Oct 12, 10:22:13 PM" [ref=e129]
+            - generic "chrome.exe - Mon, Oct 12, 10:23:14 PM" [ref=e130]
+            - generic "chrome.exe - Mon, Oct 12, 10:24:15 PM" [ref=e131]
+            - generic "Photos.exe - Mon, Oct 12, 10:25:15 PM" [ref=e132]
+            - generic "chrome.exe - Mon, Oct 12, 10:26:16 PM" [ref=e133]
+            - generic "chrome.exe - Mon, Oct 12, 10:27:16 PM" [ref=e134]
+            - generic "chrome.exe - Mon, Oct 12, 10:28:17 PM" [ref=e135]
+            - generic "chrome.exe - Mon, Oct 12, 10:29:17 PM" [ref=e136]
+            - generic "chrome.exe - Mon, Oct 12, 10:30:18 PM" [ref=e137]
+            - generic "chrome.exe - Mon, Oct 12, 10:31:18 PM" [ref=e138]
+            - generic "chrome.exe - Mon, Oct 12, 10:32:18 PM" [ref=e139]
+            - generic "chrome.exe - Mon, Oct 12, 10:33:19 PM" [ref=e140]
+            - generic "qbittorrent.exe - Mon, Oct 12, 10:34:19 PM" [ref=e141]
+            - generic "explorer.exe - Mon, Oct 12, 10:35:20 PM" [ref=e142]
+            - generic "chrome.exe - Mon, Oct 12, 10:36:21 PM" [ref=e143]
+            - generic "chrome.exe - Mon, Oct 12, 10:37:21 PM" [ref=e144]
+            - generic "chrome.exe - Mon, Oct 12, 10:38:22 PM" [ref=e145]
+            - generic "chrome.exe - Mon, Oct 12, 10:39:23 PM" [ref=e146]
+            - generic "Panteon.exe - Mon, Oct 12, 10:40:23 PM" [ref=e147]
+            - generic "chrome.exe - Mon, Oct 12, 10:41:24 PM" [ref=e148]
+            - generic "ChatGPT.exe - Mon, Oct 12, 10:42:24 PM" [ref=e149]
+            - generic "chrome.exe - Mon, Oct 12, 10:43:25 PM" [ref=e150]
+            - generic "chrome.exe - Mon, Oct 12, 10:44:25 PM" [ref=e151]
+            - generic "chrome.exe - Mon, Oct 12, 10:45:26 PM" [ref=e152]
+            - generic "chrome.exe - Mon, Oct 12, 10:46:27 PM" [ref=e153]
+            - generic "chrome.exe - Mon, Oct 12, 10:47:27 PM" [ref=e154]
+            - generic "chrome.exe - Mon, Oct 12, 10:48:27 PM" [ref=e155]
+            - generic "chrome.exe - Mon, Oct 12, 10:49:28 PM" [ref=e156]
+            - generic "chrome.exe - Mon, Oct 12, 10:50:28 PM" [ref=e157]
+            - generic "Code.exe - Mon, Oct 12, 10:51:29 PM" [ref=e158]
+            - generic "Code.exe - Mon, Oct 12, 10:52:29 PM" [ref=e159]
+            - generic "Code.exe - Mon, Oct 12, 10:53:30 PM" [ref=e160]
+            - generic "System Idle - Mon, Oct 12, 10:54:30 PM" [ref=e161]
+            - generic "LockApp.exe - Mon, Oct 12, 10:55:30 PM" [ref=e162]
+            - generic "System Idle - Mon, Oct 12, 10:56:31 PM" [ref=e163]
+            - generic "System Idle - Mon, Oct 12, 10:57:31 PM" [ref=e164]
+            - generic "System Idle - Mon, Oct 12, 10:58:31 PM" [ref=e165]
+            - generic "System Idle - Mon, Oct 12, 10:59:31 PM" [ref=e166]
+            - generic "System Idle - Mon, Oct 12, 11:00:31 PM" [ref=e167]
+            - generic "System Idle - Mon, Oct 12, 11:01:31 PM" [ref=e168]
+            - generic "System Idle - Mon, Oct 12, 11:02:31 PM" [ref=e169]
+            - generic "System Idle - Mon, Oct 12, 11:03:31 PM" [ref=e170]
+            - generic "System Idle - Mon, Oct 12, 11:04:31 PM" [ref=e171]
+            - generic "System Idle - Mon, Oct 12, 11:05:31 PM" [ref=e172]
+            - generic "System Idle - Mon, Oct 12, 11:06:31 PM" [ref=e173]
+            - generic "System Idle - Mon, Oct 12, 11:07:31 PM" [ref=e174]
+            - generic "System Idle - Mon, Oct 12, 11:08:31 PM" [ref=e175]
+            - generic "System Idle - Mon, Oct 12, 11:09:31 PM" [ref=e176]
+            - generic "System Idle - Mon, Oct 12, 11:10:31 PM" [ref=e177]
+            - generic "System Idle - Mon, Oct 12, 11:11:31 PM" [ref=e178]
+            - generic "System Idle - Mon, Oct 12, 11:12:31 PM" [ref=e179]
+            - generic "System Idle - Mon, Oct 12, 11:13:31 PM" [ref=e180]
+            - generic "System Idle - Mon, Oct 12, 11:14:31 PM" [ref=e181]
+            - generic "System Idle - Mon, Oct 12, 11:15:31 PM" [ref=e182]
+            - generic "System Idle - Mon, Oct 12, 11:16:31 PM" [ref=e183]
+            - generic "System Idle - Mon, Oct 12, 11:17:31 PM" [ref=e184]
+            - generic "System Idle - Mon, Oct 12, 11:18:31 PM" [ref=e185]
+            - generic "System Idle - Mon, Oct 12, 11:19:31 PM" [ref=e186]
+            - generic "System Idle - Mon, Oct 12, 11:20:31 PM" [ref=e187]
+            - generic "System Idle - Mon, Oct 12, 11:21:32 PM" [ref=e188]
+            - generic "System Idle - Mon, Oct 12, 11:22:32 PM" [ref=e189]
+            - generic "System Idle - Mon, Oct 12, 11:23:32 PM" [ref=e190]
+            - generic "System Idle - Mon, Oct 12, 11:24:32 PM" [ref=e191]
+            - generic "System Idle - Mon, Oct 12, 11:25:32 PM" [ref=e192]
+            - generic "System Idle - Mon, Oct 12, 11:26:32 PM" [ref=e193]
+            - generic "Code.exe - Mon, Oct 12, 11:27:32 PM" [ref=e194]
+            - generic "ShellExperienceHost.exe - Tue, Oct 13, 10:59:49 AM" [ref=e195]
+            - generic "System Idle - Tue, Oct 13, 11:00:49 AM" [ref=e196]
+            - generic "Code.exe - Tue, Oct 13, 11:01:49 AM" [ref=e197]
+            - generic "Code.exe - Tue, Oct 13, 11:02:50 AM" [ref=e198]
+            - generic "Code.exe - Tue, Oct 13, 11:03:50 AM" [ref=e199]
+            - generic "chrome.exe - Tue, Oct 13, 11:04:51 AM" [ref=e200]
+            - generic "chrome.exe - Tue, Oct 13, 11:05:51 AM" [ref=e201]
+            - generic "Code.exe - Tue, Oct 13, 11:06:52 AM" [ref=e202]
+            - generic "System Idle - Tue, Oct 13, 11:07:52 AM" [ref=e203]
+            - generic "System Idle - Tue, Oct 13, 11:08:52 AM" [ref=e204]
+            - generic "System Idle - Tue, Oct 13, 11:09:52 AM" [ref=e205]
+            - generic "chrome.exe - Tue, Oct 13, 11:10:52 AM" [ref=e206]
+            - generic "chrome.exe - Tue, Oct 13, 11:11:53 AM" [ref=e207]
+            - generic "chrome.exe - Tue, Oct 13, 11:12:54 AM" [ref=e208]
+            - generic "chrome.exe - Tue, Oct 13, 11:13:55 AM" [ref=e209]
+            - generic "chrome.exe - Tue, Oct 13, 11:14:55 AM" [ref=e210]
+            - generic "chrome.exe - Tue, Oct 13, 11:15:56 AM" [ref=e211]
+            - generic "chrome.exe - Tue, Oct 13, 11:16:56 AM" [ref=e212]
+            - generic "Code.exe - Tue, Oct 13, 11:17:57 AM" [ref=e213]
+            - generic "hearthland.exe - Tue, Oct 13, 11:18:57 AM" [ref=e214]
+            - generic "hearthland.exe - Tue, Oct 13, 11:19:58 AM" [ref=e215]
+            - generic "Code.exe - Tue, Oct 13, 11:20:58 AM" [ref=e216]
+            - generic "Code.exe - Tue, Oct 13, 11:21:59 AM" [ref=e217]
+            - generic "chrome.exe - Tue, Oct 13, 11:22:59 AM" [ref=e218]
+            - generic "Code.exe - Tue, Oct 13, 11:24:00 AM" [ref=e219]
+            - generic "chrome.exe - Tue, Oct 13, 11:25:01 AM" [ref=e220]
+            - generic "hearthland.exe - Tue, Oct 13, 11:26:01 AM" [ref=e221]
+            - generic "Code.exe - Tue, Oct 13, 11:27:02 AM" [ref=e222]
+            - generic "Code.exe - Tue, Oct 13, 11:28:02 AM" [ref=e223]
+            - generic "Code.exe - Tue, Oct 13, 11:29:03 AM" [ref=e224]
+            - generic "hearthland.exe - Tue, Oct 13, 11:30:03 AM" [ref=e225]
+            - generic "Code.exe - Tue, Oct 13, 11:31:04 AM" [ref=e226]
+            - generic "hearthland.exe - Tue, Oct 13, 11:32:04 AM" [ref=e227]
+            - generic "Code.exe - Tue, Oct 13, 11:33:05 AM" [ref=e228]
+            - generic "Code.exe - Tue, Oct 13, 11:34:06 AM" [ref=e229]
+            - generic "System Idle - Tue, Oct 13, 11:35:06 AM" [ref=e230]
+            - generic "Code.exe - Tue, Oct 13, 11:36:06 AM" [ref=e231]
+            - generic "hearthland.exe - Tue, Oct 13, 11:37:07 AM" [ref=e232]
+            - generic "Code.exe - Tue, Oct 13, 11:38:07 AM" [ref=e233]
+            - generic "Code.exe - Tue, Oct 13, 11:39:08 AM" [ref=e234]
+            - generic "chrome.exe - Tue, Oct 13, 11:40:09 AM" [ref=e235]
+            - generic "Code.exe - Tue, Oct 13, 11:41:09 AM" [ref=e236]
+            - generic "Code.exe - Tue, Oct 13, 11:42:09 AM" [ref=e237]
+            - generic "System Idle - Tue, Oct 13, 11:43:10 AM" [ref=e238]
+            - generic "Code.exe - Tue, Oct 13, 11:44:10 AM" [ref=e239]
+            - generic "System Idle - Tue, Oct 13, 11:45:10 AM" [ref=e240]
+            - generic "System Idle - Tue, Oct 13, 11:46:10 AM" [ref=e241]
+            - generic "Code.exe - Tue, Oct 13, 11:47:10 AM" [ref=e242]
+            - generic "Code.exe - Tue, Oct 13, 11:48:11 AM" [ref=e243]
+            - generic "Code.exe - Tue, Oct 13, 11:49:11 AM" [ref=e244]
+            - generic "Code.exe - Tue, Oct 13, 11:50:12 AM" [ref=e245]
+            - generic "Code.exe - Tue, Oct 13, 11:51:12 AM" [ref=e246]
+            - generic "Code.exe - Tue, Oct 13, 11:52:13 AM" [ref=e247]
+            - generic "Code.exe - Tue, Oct 13, 11:53:13 AM" [ref=e248]
+            - generic "Code.exe - Tue, Oct 13, 11:54:14 AM" [ref=e249]
+            - generic "Panteon.exe - Tue, Oct 13, 11:55:14 AM" [ref=e250]
+            - generic "Panteon.exe - Tue, Oct 13, 11:56:15 AM" [ref=e251]
+            - generic "Panteon.exe - Tue, Oct 13, 11:57:16 AM" [ref=e252]
+            - generic "System Idle - Tue, Oct 13, 11:58:17 AM" [ref=e253]
+            - generic "System Idle - Tue, Oct 13, 11:59:17 AM" [ref=e254]
+            - generic "System Idle - Tue, Oct 13, 12:00:17 PM" [ref=e255]
+            - generic "System Idle - Tue, Oct 13, 12:01:17 PM" [ref=e256]
+            - generic "Panteon.exe - Tue, Oct 13, 12:02:17 PM" [ref=e257]
+            - generic "System Idle - Tue, Oct 13, 12:03:17 PM" [ref=e258]
+            - generic "Panteon.exe - Tue, Oct 13, 12:04:18 PM" [ref=e259]
+            - generic "System Idle - Tue, Oct 13, 12:05:18 PM" [ref=e260]
+            - generic "System Idle - Tue, Oct 13, 12:06:18 PM" [ref=e261]
+            - generic "System Idle - Tue, Oct 13, 12:07:18 PM" [ref=e262]
+            - generic "System Idle - Tue, Oct 13, 12:08:18 PM" [ref=e263]
+            - generic "System Idle - Tue, Oct 13, 12:09:18 PM" [ref=e264]
+            - generic "System Idle - Tue, Oct 13, 12:10:18 PM" [ref=e265]
+            - generic "Panteon.exe - Tue, Oct 13, 12:11:19 PM" [ref=e266]
+            - generic "System Idle - Tue, Oct 13, 12:12:20 PM" [ref=e267]
+            - generic "Panteon.exe - Tue, Oct 13, 12:13:21 PM" [ref=e268]
+            - generic "System Idle - Tue, Oct 13, 12:14:22 PM" [ref=e269]
+            - generic "System Idle - Tue, Oct 13, 12:15:22 PM" [ref=e270]
+            - generic "Panteon.exe - Tue, Oct 13, 12:16:22 PM" [ref=e271]
+            - generic "Panteon.exe - Tue, Oct 13, 12:17:23 PM" [ref=e272]
+            - generic "Panteon.exe - Tue, Oct 13, 12:18:23 PM" [ref=e273]
+            - generic "System Idle - Tue, Oct 13, 12:19:24 PM" [ref=e274]
+            - generic "System Idle - Tue, Oct 13, 12:20:24 PM" [ref=e275]
+            - generic "Panteon.exe - Tue, Oct 13, 12:21:24 PM" [ref=e276]
+            - generic "Panteon.exe - Tue, Oct 13, 12:22:25 PM" [ref=e277]
+            - generic "Panteon.exe - Tue, Oct 13, 12:23:26 PM" [ref=e278]
+            - generic "Panteon.exe - Tue, Oct 13, 12:24:27 PM" [ref=e279]
+            - generic "System Idle - Tue, Oct 13, 12:25:28 PM" [ref=e280]
+            - generic "System Idle - Tue, Oct 13, 12:26:28 PM" [ref=e281]
+            - generic "Panteon.exe - Tue, Oct 13, 12:27:28 PM" [ref=e282]
+            - generic "System Idle - Tue, Oct 13, 12:28:28 PM" [ref=e283]
+            - generic "System Idle - Tue, Oct 13, 12:29:28 PM" [ref=e284]
+            - generic "System Idle - Tue, Oct 13, 12:30:28 PM" [ref=e285]
+            - generic "System Idle - Tue, Oct 13, 12:31:28 PM" [ref=e286]
+            - generic "System Idle - Tue, Oct 13, 12:32:28 PM" [ref=e287]
+            - generic "Panteon.exe - Tue, Oct 13, 12:33:29 PM" [ref=e288]
+            - generic "System Idle - Tue, Oct 13, 12:34:30 PM" [ref=e289]
+            - generic "System Idle - Tue, Oct 13, 12:35:30 PM" [ref=e290]
+            - generic "System Idle - Tue, Oct 13, 12:36:30 PM" [ref=e291]
+            - generic "System Idle - Tue, Oct 13, 12:37:30 PM" [ref=e292]
+            - generic "System Idle - Tue, Oct 13, 12:38:30 PM" [ref=e293]
+            - generic "System Idle - Tue, Oct 13, 12:39:30 PM" [ref=e294]
+            - generic "Code.exe - Tue, Oct 13, 12:40:30 PM" [ref=e295]
+            - generic "Code.exe - Tue, Oct 13, 12:41:30 PM" [ref=e296]
+            - generic "chrome.exe - Tue, Oct 13, 12:42:31 PM" [ref=e297]
+            - generic "Panteon.exe - Tue, Oct 13, 12:43:31 PM" [ref=e298]
+            - generic "Code.exe - Tue, Oct 13, 12:44:32 PM" [ref=e299]
+            - generic "chrome.exe - Tue, Oct 13, 12:45:32 PM" [ref=e300]
+            - generic "Code.exe - Tue, Oct 13, 12:46:32 PM" [ref=e301]
+            - generic "Code.exe - Tue, Oct 13, 12:47:33 PM" [ref=e302]
+            - generic "explorer.exe - Tue, Oct 13, 12:48:33 PM" [ref=e303]
+            - generic "Code.exe - Tue, Oct 13, 12:49:34 PM" [ref=e304]
+            - generic "Code.exe - Tue, Oct 13, 12:50:34 PM" [ref=e305]
+            - generic "Code.exe - Tue, Oct 13, 12:51:35 PM" [ref=e306]
+            - generic "Code.exe - Tue, Oct 13, 12:52:36 PM" [ref=e307]
+            - generic "Code.exe - Tue, Oct 13, 12:53:37 PM" [ref=e308]
+            - generic "chrome.exe - Tue, Oct 13, 12:54:38 PM" [ref=e309]
+            - generic "Code.exe - Tue, Oct 13, 12:55:38 PM" [ref=e310]
+            - generic "Code.exe - Tue, Oct 13, 12:56:39 PM" [ref=e311]
+            - generic "System Idle - Tue, Oct 13, 12:57:39 PM" [ref=e312]
+            - generic "WhatsApp.Root.exe - Tue, Oct 13, 12:58:39 PM" [ref=e313]
+            - generic "StartMenuExperienceHost.exe - Tue, Oct 13, 12:59:40 PM" [ref=e314]
+            - generic "Code.exe - Tue, Oct 13, 01:00:40 PM" [ref=e315]
+            - generic "Code.exe - Tue, Oct 13, 01:01:41 PM" [ref=e316]
+            - generic "Code.exe - Tue, Oct 13, 01:02:41 PM" [ref=e317]
+            - generic "System Idle - Tue, Oct 13, 01:03:41 PM" [ref=e318]
+            - generic "System Idle - Tue, Oct 13, 01:04:41 PM" [ref=e319]
+            - generic "System Idle - Tue, Oct 13, 01:05:41 PM" [ref=e320]
+            - generic "Code.exe - Tue, Oct 13, 01:06:42 PM" [ref=e321]
+            - generic "Spotify.exe - Tue, Oct 13, 01:07:42 PM" [ref=e322]
+            - generic "Spotify.exe - Tue, Oct 13, 01:08:43 PM" [ref=e323]
+            - generic "Spotify.exe - Tue, Oct 13, 01:09:44 PM" [ref=e324]
+            - generic "WhatsApp.Root.exe - Tue, Oct 13, 01:10:45 PM" [ref=e325]
+            - generic "chrome.exe - Tue, Oct 13, 01:11:46 PM" [ref=e326]
+            - generic "chrome.exe - Tue, Oct 13, 01:12:46 PM" [ref=e327]
+            - generic "Code.exe - Tue, Oct 13, 01:13:49 PM" [ref=e328]
+            - generic "Code.exe - Tue, Oct 13, 01:14:50 PM" [ref=e329]
+            - generic "Code.exe - Tue, Oct 13, 01:15:50 PM" [ref=e330]
+            - generic "Code.exe - Tue, Oct 13, 01:16:51 PM" [ref=e331]
+            - generic "System Idle - Tue, Oct 13, 01:17:51 PM" [ref=e332]
+            - generic "System Idle - Tue, Oct 13, 01:18:51 PM" [ref=e333]
+            - generic "Code.exe - Tue, Oct 13, 01:19:51 PM" [ref=e334]
+            - generic "chrome.exe - Tue, Oct 13, 01:20:52 PM" [ref=e335]
+            - generic "chrome.exe - Tue, Oct 13, 01:21:53 PM" [ref=e336]
+            - generic "ShellHost.exe - Tue, Oct 13, 01:22:53 PM" [ref=e337]
+            - generic "LockApp.exe - Tue, Oct 13, 01:23:55 PM" [ref=e338]
+            - generic "chrome.exe - Tue, Oct 13, 01:25:56 PM" [ref=e339]
+            - generic "Code.exe - Tue, Oct 13, 01:26:57 PM" [ref=e340]
+            - generic "chrome.exe - Tue, Oct 13, 01:27:58 PM" [ref=e341]
+            - generic "chrome.exe - Tue, Oct 13, 01:28:58 PM" [ref=e342]
+            - generic "Code.exe - Tue, Oct 13, 01:29:59 PM" [ref=e343]
+            - generic "LockApp.exe - Tue, Oct 13, 01:31:00 PM" [ref=e344]
+            - generic "System Idle - Tue, Oct 13, 01:32:00 PM" [ref=e345]
+            - generic "System Idle - Tue, Oct 13, 01:33:01 PM" [ref=e346]
+            - generic "System Idle - Tue, Oct 13, 01:34:01 PM" [ref=e347]
+            - generic "System Idle - Tue, Oct 13, 01:35:01 PM" [ref=e348]
+            - generic "System Idle - Tue, Oct 13, 01:36:01 PM" [ref=e349]
+            - generic "System Idle - Tue, Oct 13, 01:37:01 PM" [ref=e350]
+            - generic "System Idle - Tue, Oct 13, 01:38:01 PM" [ref=e351]
+            - generic "System Idle - Tue, Oct 13, 01:39:01 PM" [ref=e352]
+            - generic "System Idle - Tue, Oct 13, 01:40:01 PM" [ref=e353]
+            - generic "System Idle - Tue, Oct 13, 01:41:01 PM" [ref=e354]
+            - generic "System Idle - Tue, Oct 13, 01:42:01 PM" [ref=e355]
+            - generic "System Idle - Tue, Oct 13, 01:43:01 PM" [ref=e356]
+            - generic "System Idle - Tue, Oct 13, 01:44:01 PM" [ref=e357]
+            - generic "System Idle - Tue, Oct 13, 01:45:01 PM" [ref=e358]
+            - generic "System Idle - Tue, Oct 13, 01:46:01 PM" [ref=e359]
+            - generic "System Idle - Tue, Oct 13, 01:47:01 PM" [ref=e360]
+            - generic "System Idle - Tue, Oct 13, 01:48:01 PM" [ref=e361]
+            - generic "System Idle - Tue, Oct 13, 01:49:01 PM" [ref=e362]
+            - generic "System Idle - Tue, Oct 13, 01:50:01 PM" [ref=e363]
+            - generic "System Idle - Tue, Oct 13, 01:51:01 PM" [ref=e364]
+            - generic "System Idle - Tue, Oct 13, 01:52:01 PM" [ref=e365]
+            - generic "System Idle - Tue, Oct 13, 01:53:01 PM" [ref=e366]
+            - generic "System Idle - Tue, Oct 13, 01:54:01 PM" [ref=e367]
+            - generic "System Idle - Tue, Oct 13, 01:55:01 PM" [ref=e368]
+            - generic "System Idle - Tue, Oct 13, 01:56:01 PM" [ref=e369]
+            - generic "System Idle - Tue, Oct 13, 01:57:01 PM" [ref=e370]
+            - generic "System Idle - Tue, Oct 13, 01:58:01 PM" [ref=e371]
+            - generic "System Idle - Tue, Oct 13, 01:59:01 PM" [ref=e372]
+            - generic "System Idle - Tue, Oct 13, 02:00:01 PM" [ref=e373]
+            - generic "System Idle - Tue, Oct 13, 02:01:01 PM" [ref=e374]
+            - generic "System Idle - Tue, Oct 13, 02:02:01 PM" [ref=e375]
+            - generic "System Idle - Tue, Oct 13, 02:03:01 PM" [ref=e376]
+            - generic "System Idle - Tue, Oct 13, 02:04:01 PM" [ref=e377]
+            - generic "System Idle - Tue, Oct 13, 02:05:01 PM" [ref=e378]
+            - generic "System Idle - Tue, Oct 13, 02:06:01 PM" [ref=e379]
+            - generic "System Idle - Tue, Oct 13, 02:07:01 PM" [ref=e380]
+            - generic "System Idle - Tue, Oct 13, 02:08:01 PM" [ref=e381]
+            - generic "System Idle - Tue, Oct 13, 02:09:01 PM" [ref=e382]
+            - generic "System Idle - Tue, Oct 13, 02:10:01 PM" [ref=e383]
+            - generic "System Idle - Tue, Oct 13, 02:11:01 PM" [ref=e384]
+            - generic "System Idle - Tue, Oct 13, 02:12:01 PM" [ref=e385]
+            - generic "System Idle - Tue, Oct 13, 02:13:01 PM" [ref=e386]
+            - generic "System Idle - Tue, Oct 13, 02:14:01 PM" [ref=e387]
+            - generic "System Idle - Tue, Oct 13, 02:15:01 PM" [ref=e388]
+            - generic "System Idle - Tue, Oct 13, 02:16:01 PM" [ref=e389]
+            - generic "System Idle - Tue, Oct 13, 02:17:01 PM" [ref=e390]
+            - generic "System Idle - Tue, Oct 13, 02:18:01 PM" [ref=e391]
+            - generic "System Idle - Tue, Oct 13, 02:19:01 PM" [ref=e392]
+            - generic "System Idle - Tue, Oct 13, 02:20:01 PM" [ref=e393]
+            - generic "Unknown - Tue, Oct 13, 02:21:03 PM" [ref=e394]
+            - generic "Code.exe - Tue, Oct 13, 02:22:05 PM" [ref=e395]
+            - generic "System Idle - Tue, Oct 13, 02:23:05 PM" [ref=e396]
+            - generic "Code.exe - Tue, Oct 13, 02:24:06 PM" [ref=e397]
+            - generic "Code.exe - Tue, Oct 13, 02:25:06 PM" [ref=e398]
+            - generic "System Idle - Tue, Oct 13, 02:26:06 PM" [ref=e399]
+            - generic "System Idle - Tue, Oct 13, 02:27:06 PM" [ref=e400]
+            - generic "System Idle - Tue, Oct 13, 02:28:06 PM" [ref=e401]
+            - generic "System Idle - Tue, Oct 13, 02:29:06 PM" [ref=e402]
+            - generic "System Idle - Tue, Oct 13, 02:30:06 PM" [ref=e403]
+            - generic "System Idle - Tue, Oct 13, 02:31:06 PM" [ref=e404]
+            - generic "System Idle - Tue, Oct 13, 02:32:06 PM" [ref=e405]
+            - generic "System Idle - Tue, Oct 13, 02:33:06 PM" [ref=e406]
+            - generic "System Idle - Tue, Oct 13, 02:34:06 PM" [ref=e407]
+            - generic "System Idle - Tue, Oct 13, 02:35:06 PM" [ref=e408]
+            - generic "System Idle - Tue, Oct 13, 02:36:06 PM" [ref=e409]
+            - generic "System Idle - Tue, Oct 13, 02:37:07 PM" [ref=e410]
+            - generic "System Idle - Tue, Oct 13, 02:38:07 PM" [ref=e411]
+            - generic "System Idle - Tue, Oct 13, 02:39:07 PM" [ref=e412]
+            - generic "System Idle - Tue, Oct 13, 02:40:07 PM" [ref=e413]
+            - generic "System Idle - Tue, Oct 13, 02:41:07 PM" [ref=e414]
+            - generic "System Idle - Tue, Oct 13, 02:42:07 PM" [ref=e415]
+            - generic "chrome.exe - Tue, Oct 13, 02:43:07 PM" [ref=e416]
+            - generic "Code.exe - Tue, Oct 13, 02:44:07 PM" [ref=e417]
+            - generic "setup.tmp - Tue, Oct 13, 02:45:08 PM" [ref=e418]
+            - generic "SearchHost.exe - Tue, Oct 13, 02:46:08 PM" [ref=e419]
+            - generic "Code.exe - Tue, Oct 13, 02:47:09 PM" [ref=e420]
+            - generic "Code.exe - Tue, Oct 13, 02:48:09 PM" [ref=e421]
+            - generic "chrome.exe - Tue, Oct 13, 02:49:09 PM" [ref=e422]
+            - generic "Code.exe - Tue, Oct 13, 02:50:10 PM" [ref=e423]
+            - generic "Code.exe - Tue, Oct 13, 02:51:10 PM" [ref=e424]
+            - generic "Code.exe - Tue, Oct 13, 02:52:11 PM" [ref=e425]
+            - generic "explorer.exe - Tue, Oct 13, 02:53:12 PM" [ref=e426]
+            - generic "explorer.exe - Tue, Oct 13, 02:54:12 PM" [ref=e427]
+            - generic "chrome.exe - Tue, Oct 13, 02:55:13 PM" [ref=e428]
+            - generic "chrome.exe - Tue, Oct 13, 02:56:14 PM" [ref=e429]
+            - generic "WhatsApp.Root.exe - Tue, Oct 13, 02:57:14 PM" [ref=e430]
+            - generic "chrome.exe - Tue, Oct 13, 02:58:15 PM" [ref=e431]
+            - generic "System Idle - Tue, Oct 13, 02:59:16 PM" [ref=e432]
+            - generic "System Idle - Tue, Oct 13, 03:00:16 PM" [ref=e433]
+            - generic "System Idle - Tue, Oct 13, 03:01:16 PM" [ref=e434]
+            - generic "chrome.exe - Tue, Oct 13, 03:02:16 PM" [ref=e435]
+            - generic "chrome.exe - Tue, Oct 13, 03:03:17 PM" [ref=e436]
+            - generic "chrome.exe - Tue, Oct 13, 03:04:17 PM" [ref=e437]
+            - generic "Code.exe - Tue, Oct 13, 03:05:18 PM" [ref=e438]
+            - generic "Code.exe - Tue, Oct 13, 03:06:18 PM" [ref=e439]
+            - generic "Panteon.exe - Tue, Oct 13, 03:07:18 PM" [ref=e440]
+            - generic "chrome.exe - Tue, Oct 13, 03:08:20 PM" [ref=e441]
+            - generic "chrome.exe - Tue, Oct 13, 03:09:20 PM" [ref=e442]
+            - generic "ChatGPT.exe - Tue, Oct 13, 03:10:21 PM" [ref=e443]
+            - generic "chrome.exe - Tue, Oct 13, 03:11:22 PM" [ref=e444]
+            - generic "Code.exe - Tue, Oct 13, 03:12:22 PM" [ref=e445]
+            - generic "ChatGPT.exe - Tue, Oct 13, 03:13:23 PM" [ref=e446]
+            - generic "Code.exe - Tue, Oct 13, 03:14:23 PM" [ref=e447]
+            - generic "Code.exe - Tue, Oct 13, 03:15:24 PM" [ref=e448]
+            - generic "Code.exe - Tue, Oct 13, 03:16:24 PM" [ref=e449]
+            - generic "chrome.exe - Tue, Oct 13, 03:17:24 PM" [ref=e450]
+            - generic "chrome.exe - Tue, Oct 13, 03:18:25 PM" [ref=e451]
+            - generic "chrome.exe - Tue, Oct 13, 03:19:26 PM" [ref=e452]
+            - generic "chrome.exe - Tue, Oct 13, 03:20:26 PM" [ref=e453]
+            - generic "chrome.exe - Tue, Oct 13, 03:21:27 PM" [ref=e454]
+            - generic "chrome.exe - Tue, Oct 13, 03:22:27 PM" [ref=e455]
+            - generic "System Idle - Tue, Oct 13, 03:23:28 PM" [ref=e456]
+            - generic "System Idle - Tue, Oct 13, 03:24:28 PM" [ref=e457]
+            - generic "System Idle - Tue, Oct 13, 03:25:28 PM" [ref=e458]
+            - generic "System Idle - Tue, Oct 13, 03:26:28 PM" [ref=e459]
+            - generic "System Idle - Tue, Oct 13, 03:27:28 PM" [ref=e460]
+            - generic "System Idle - Tue, Oct 13, 03:28:28 PM" [ref=e461]
+            - generic "System Idle - Tue, Oct 13, 03:29:28 PM" [ref=e462]
+            - generic "System Idle - Tue, Oct 13, 03:30:28 PM" [ref=e463]
+            - generic "Pantheon.exe - Tue, Oct 13, 03:31:28 PM" [ref=e464]
+            - generic "Pantheon.exe - Tue, Oct 13, 03:32:28 PM" [ref=e465]
+            - generic "System Idle - Tue, Oct 13, 03:33:29 PM" [ref=e466]
+            - generic "System Idle - Tue, Oct 13, 03:34:29 PM" [ref=e467]
+            - generic "System Idle - Tue, Oct 13, 03:35:29 PM" [ref=e468]
+            - generic "System Idle - Tue, Oct 13, 03:36:29 PM" [ref=e469]
+            - generic "System Idle - Tue, Oct 13, 03:37:29 PM" [ref=e470]
+            - generic "System Idle - Tue, Oct 13, 03:38:29 PM" [ref=e471]
+            - generic "System Idle - Tue, Oct 13, 03:39:29 PM" [ref=e472]
+            - generic "Code.exe - Tue, Oct 13, 03:40:29 PM" [ref=e473]
+            - generic "Pantheon.exe - Tue, Oct 13, 03:41:29 PM" [ref=e474]
+            - generic "Pantheon.exe - Tue, Oct 13, 03:42:30 PM" [ref=e475]
+            - generic "System Idle - Tue, Oct 13, 03:43:30 PM" [ref=e476]
+            - generic "System Idle - Tue, Oct 13, 03:44:30 PM" [ref=e477]
+            - generic "System Idle - Tue, Oct 13, 03:45:30 PM" [ref=e478]
+            - generic "System Idle - Tue, Oct 13, 03:46:30 PM" [ref=e479]
+            - generic "System Idle - Tue, Oct 13, 03:47:30 PM" [ref=e480]
+            - generic "chrome.exe - Tue, Oct 13, 03:48:30 PM" [ref=e481]
+            - generic "WhatsApp.Root.exe - Tue, Oct 13, 03:49:31 PM" [ref=e482]
+            - generic "ChatGPT.exe - Tue, Oct 13, 03:50:31 PM" [ref=e483]
+            - generic "ChatGPT.exe - Tue, Oct 13, 03:51:32 PM" [ref=e484]
+            - generic "WhatsApp.Root.exe - Tue, Oct 13, 03:52:32 PM" [ref=e485]
+            - generic "chrome.exe - Tue, Oct 13, 03:53:33 PM" [ref=e486]
+            - generic "chrome.exe - Tue, Oct 13, 03:54:34 PM" [ref=e487]
+            - generic "SearchHost.exe - Tue, Oct 13, 03:55:35 PM" [ref=e488]
+            - generic "ChatGPT.exe - Tue, Oct 13, 03:56:35 PM" [ref=e489]
+            - generic "ChatGPT.exe - Tue, Oct 13, 03:57:37 PM" [ref=e490]
+            - generic "explorer.exe - Tue, Oct 13, 03:58:37 PM" [ref=e491]
+            - generic "explorer.exe - Tue, Oct 13, 03:59:38 PM" [ref=e492]
+            - generic "explorer.exe - Tue, Oct 13, 04:00:38 PM" [ref=e493]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:01:38 PM" [ref=e494]
+            - generic "chrome.exe - Tue, Oct 13, 04:02:39 PM" [ref=e495]
+            - generic "chrome.exe - Tue, Oct 13, 04:03:39 PM" [ref=e496]
+            - generic "Code.exe - Tue, Oct 13, 04:04:40 PM" [ref=e497]
+            - generic "Code.exe - Tue, Oct 13, 04:05:40 PM" [ref=e498]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:06:41 PM" [ref=e499]
+            - generic "Code.exe - Tue, Oct 13, 04:07:41 PM" [ref=e500]
+            - generic "Code.exe - Tue, Oct 13, 04:08:42 PM" [ref=e501]
+            - generic "System Idle - Tue, Oct 13, 04:09:42 PM" [ref=e502]
+            - generic "System Idle - Tue, Oct 13, 04:10:42 PM" [ref=e503]
+            - generic "WhatsApp.Root.exe - Tue, Oct 13, 04:11:42 PM" [ref=e504]
+            - generic "WhatsApp.Root.exe - Tue, Oct 13, 04:12:43 PM" [ref=e505]
+            - generic "explorer.exe - Tue, Oct 13, 04:13:43 PM" [ref=e506]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:14:44 PM" [ref=e507]
+            - generic "WhatsApp.Root.exe - Tue, Oct 13, 04:15:44 PM" [ref=e508]
+            - generic "Code.exe - Tue, Oct 13, 04:16:45 PM" [ref=e509]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:17:45 PM" [ref=e510]
+            - generic "hearthland.exe - Tue, Oct 13, 04:18:46 PM" [ref=e511]
+            - generic "Code.exe - Tue, Oct 13, 04:19:47 PM" [ref=e512]
+            - generic "chrome.exe - Tue, Oct 13, 04:20:47 PM" [ref=e513]
+            - generic "Code.exe - Tue, Oct 13, 04:21:49 PM" [ref=e514]
+            - generic "chrome.exe - Tue, Oct 13, 04:22:50 PM" [ref=e515]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:23:50 PM" [ref=e516]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:24:51 PM" [ref=e517]
+            - generic "chrome.exe - Tue, Oct 13, 04:25:52 PM" [ref=e518]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:26:53 PM" [ref=e519]
+            - generic "Code.exe - Tue, Oct 13, 04:27:54 PM" [ref=e520]
+            - generic "Code.exe - Tue, Oct 13, 04:28:55 PM" [ref=e521]
+            - generic "Code.exe - Tue, Oct 13, 04:29:56 PM" [ref=e522]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:30:57 PM" [ref=e523]
+            - generic "chrome.exe - Tue, Oct 13, 04:31:58 PM" [ref=e524]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:32:58 PM" [ref=e525]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:33:59 PM" [ref=e526]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:35:00 PM" [ref=e527]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:36:00 PM" [ref=e528]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:37:01 PM" [ref=e529]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:38:01 PM" [ref=e530]
+            - generic "explorer.exe - Tue, Oct 13, 04:39:01 PM" [ref=e531]
+            - generic "hearthland.exe - Tue, Oct 13, 04:40:02 PM" [ref=e532]
+            - generic "Code.exe - Tue, Oct 13, 04:41:03 PM" [ref=e533]
+            - generic "hearthland.exe - Tue, Oct 13, 04:42:03 PM" [ref=e534]
+            - generic "Code.exe - Tue, Oct 13, 04:43:04 PM" [ref=e535]
+            - generic "Code.exe - Tue, Oct 13, 04:44:05 PM" [ref=e536]
+            - generic "chrome.exe - Tue, Oct 13, 04:45:06 PM" [ref=e537]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:46:06 PM" [ref=e538]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:47:07 PM" [ref=e539]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:48:08 PM" [ref=e540]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:49:08 PM" [ref=e541]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:50:09 PM" [ref=e542]
+            - generic "ChatGPT.exe - Tue, Oct 13, 04:51:10 PM" [ref=e543]
+            - generic "System Idle - Tue, Oct 13, 04:52:10 PM" [ref=e544]
+            - generic "System Idle - Tue, Oct 13, 04:53:10 PM" [ref=e545]
+            - generic "System Idle - Tue, Oct 13, 04:54:10 PM" [ref=e546]
+            - generic "System Idle - Tue, Oct 13, 04:55:10 PM" [ref=e547]
+            - generic "System Idle - Tue, Oct 13, 04:56:10 PM" [ref=e548]
+            - generic "System Idle - Tue, Oct 13, 04:57:10 PM" [ref=e549]
+            - generic "chrome.exe - Tue, Oct 13, 04:58:10 PM" [ref=e550]
+            - generic "chrome.exe - Tue, Oct 13, 04:59:11 PM" [ref=e551]
+            - generic "chrome.exe - Tue, Oct 13, 05:00:12 PM" [ref=e552]
+            - generic "chrome.exe - Tue, Oct 13, 05:01:13 PM" [ref=e553]
+            - generic "chrome.exe - Tue, Oct 13, 05:02:13 PM" [ref=e554]
+            - generic "chrome.exe - Tue, Oct 13, 05:03:14 PM" [ref=e555]
+            - generic "chrome.exe - Tue, Oct 13, 05:04:15 PM" [ref=e556]
+            - generic "chrome.exe - Tue, Oct 13, 05:05:15 PM" [ref=e557]
+            - generic "chrome.exe - Tue, Oct 13, 05:06:24 PM" [ref=e558]
+            - generic "chrome.exe - Tue, Oct 13, 05:07:25 PM" [ref=e559]
+            - generic "chrome.exe - Tue, Oct 13, 05:08:25 PM" [ref=e560]
+            - generic "System Idle - Tue, Oct 13, 05:09:25 PM" [ref=e561]
+            - generic "System Idle - Tue, Oct 13, 05:10:25 PM" [ref=e562]
+            - generic "System Idle - Tue, Oct 13, 05:11:25 PM" [ref=e563]
+            - generic "System Idle - Tue, Oct 13, 05:12:25 PM" [ref=e564]
+            - generic "System Idle - Tue, Oct 13, 05:13:25 PM" [ref=e565]
+            - generic "System Idle - Tue, Oct 13, 05:14:25 PM" [ref=e566]
+            - generic "WhisperDictation.exe - Tue, Oct 13, 05:15:26 PM" [ref=e567]
+            - generic "chrome.exe - Tue, Oct 13, 05:16:27 PM" [ref=e568]
+            - generic "chrome.exe - Tue, Oct 13, 05:17:27 PM" [ref=e569]
+            - generic "System Idle - Tue, Oct 13, 05:18:27 PM" [ref=e570]
+            - generic "System Idle - Tue, Oct 13, 05:19:27 PM" [ref=e571]
+            - generic "System Idle - Tue, Oct 13, 05:20:27 PM" [ref=e572]
+            - generic "System Idle - Tue, Oct 13, 05:21:27 PM" [ref=e573]
+            - generic "System Idle - Tue, Oct 13, 05:22:27 PM" [ref=e574]
+          - generic [ref=e575]:
+            - generic [ref=e576]: 09:28 PM
+            - generic [ref=e577]: 05:22 PM
+      - generic [ref=e578]:
+        - generic [ref=e579]: System Idle
+        - generic [ref=e582]: Code.exe
+        - generic [ref=e585]: LockApp.exe
+        - generic [ref=e588]: chrome.exe
+        - generic [ref=e591]: Photos.exe
+        - generic [ref=e594]: qbittorrent.exe
+        - generic [ref=e597]: explorer.exe
+        - generic [ref=e600]: Panteon.exe
+        - generic [ref=e603]: ChatGPT.exe
+        - generic [ref=e606]: ShellExperienceHost.exe
+        - generic [ref=e609]: hearthland.exe
+        - generic [ref=e612]: WhatsApp.Root.exe
+        - generic [ref=e615]: StartMenuExperienceHost.exe
+        - generic [ref=e618]: Spotify.exe
+        - generic [ref=e621]: ShellHost.exe
+        - generic [ref=e624]: Unknown
+        - generic [ref=e627]: setup.tmp
+        - generic [ref=e630]: SearchHost.exe
+        - generic [ref=e633]: Pantheon.exe
+        - generic [ref=e636]: WhisperDictation.exe

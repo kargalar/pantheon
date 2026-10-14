@@ -119,6 +119,7 @@ public static class ShortcutDefaults
     public const string NextFrame = "NextFrame";
     public const string PreviousChapter = "PreviousChapter";
     public const string NextChapter = "NextChapter";
+    public const string CloseWindow = "CloseWindow";
 
     public static Dictionary<string, string> Create() => new(StringComparer.Ordinal)
     {
@@ -143,7 +144,8 @@ public static class ShortcutDefaults
         [ToggleSettings] = "Tab",
         [ToggleMute] = "M",
         [PreviousFrame] = "OemComma",
-        [NextFrame] = "OemPeriod"
+        [NextFrame] = "OemPeriod",
+        [CloseWindow] = "Alt+F4;Ctrl+W"
     };
 }
 

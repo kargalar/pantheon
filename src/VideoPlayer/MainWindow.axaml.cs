@@ -44,6 +44,7 @@ public sealed partial class MainWindow : Window
     private readonly DispatcherTimer _queuePersistenceTimer;
     private readonly DispatcherTimer _captureNotificationTimer;
     private readonly DispatcherTimer _subtitleSyncNotificationTimer;
+    private readonly DispatcherTimer _statusNotificationTimer = new() { Interval = TimeSpan.FromSeconds(3.5) };
     private readonly DispatcherTimer _cursorHideTimer = new() { Interval = CursorHideDelay };
     private readonly DispatcherTimer _bottomSeekVisibilityTimer = new() { Interval = BottomSeekVisibilityDuration };
     private readonly DispatcherTimer _panelFadeTimer = new() { Interval = TimeSpan.FromMilliseconds(16) };
@@ -188,6 +189,11 @@ public sealed partial class MainWindow : Window
             _subtitleSyncNotificationTimer.Stop();
             SubtitleSyncNotification.IsVisible = false;
         };
+        _statusNotificationTimer.Tick += (_, _) =>
+        {
+            _statusNotificationTimer.Stop();
+            StatusNotification.IsVisible = false;
+        };
         _cursorHideTimer.Tick += (_, _) => HideCursor();
         _bottomSeekVisibilityTimer.Tick += (_, _) =>
         {
@@ -205,26 +211,20 @@ public sealed partial class MainWindow : Window
         QueueItems.AddHandler(PointerMovedEvent, OnQueuePointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
         QueueItems.AddHandler(PointerReleasedEvent, OnQueuePointerReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
         QueueItems.PointerCaptureLost += (_, _) => ClearQueueDrag();
+        QueueItems.DoubleTapped += (_, e) =>
+        {
+            var index = GetQueueItemIndex(e.Source);
+            if (index >= 0) PlayQueuedVideo(index);
+        };
         PlayButton.Click += (_, _) => TogglePlayback();
-        SubtitleButton.Click += (_, _) => ToggleSubtitles();
+        SubtitleButton.Click += (_, _) => ToggleSubtitlePicker();
         InitializeSubtitleAutomation();
-        SubtitleButton.PointerEntered += (_, _) => OpenSubtitlePicker();
-        SubtitleButton.PointerExited += (_, _) => ScheduleSubtitlePickerClose();
         AudioTrackSelector.SelectionChanged += (_, _) => OnAudioTrackSelectionChanged();
         SubtitleTrackList.SelectionChanged += (_, _) => OnSubtitleTrackSelectionChanged();
-        SubtitlePickerContent.PointerEntered += (_, _) => _subtitlePickerCloseTimer.Stop();
-        SubtitlePickerContent.PointerExited += (_, _) => ScheduleSubtitlePickerClose();
-        SubtitleTrackList.PointerEntered += (_, _) => _subtitlePickerCloseTimer.Stop();
-        SubtitleTrackList.PointerExited += (_, _) => ScheduleSubtitlePickerClose();
-        _subtitlePickerCloseTimer.Tick += (_, _) =>
+        AudioTrackSelector.DropDownOpened += (_, _) => UpdateControlVisibility();
+        AudioTrackSelector.DropDownClosed += (_, _) => UpdateControlVisibility();
+        SubtitlePickerPopup.Closed += (_, _) =>
         {
-            _subtitlePickerCloseTimer.Stop();
-            if (SubtitleButton.IsPointerOver || SubtitlePickerContent.IsPointerOver || SubtitleTrackList.IsPointerOver)
-            {
-                _subtitlePickerCloseTimer.Start();
-                return;
-            }
-            SubtitlePickerPopup.IsOpen = false;
             _bottomHoverActive = BottomBar.IsPointerOver;
             UpdateControlVisibility();
         };
@@ -658,6 +658,12 @@ public sealed partial class MainWindow : Window
         Player.SetProperty("mute", _preferences.Muted || _preferences.Volume == 0);
         Player.SetProperty("sub-visibility", _preferences.SubtitlesVisible);
         UpdateSpeedLabel();
+        var matchingLocalSubtitle = MediaPathRules.FindMatchingSubtitleBesideVideo(path);
+        if (matchingLocalSubtitle is not null)
+        {
+            AddSubtitle(matchingLocalSubtitle, showInPlayer: true, isAutomatic: true);
+            ShowStatusNotification($"Klasördeki '{Path.GetFileName(matchingLocalSubtitle)}' altyazısı ile eşleşti");
+        }
         ScheduleQueuePersistence();
     }
 
@@ -904,6 +910,17 @@ public sealed partial class MainWindow : Window
         CaptureNotification.IsVisible = true;
         _captureNotificationTimer.Stop();
         if (!keepVisible) _captureNotificationTimer.Start();
+    }
+
+    private void ShowStatusNotification(string message)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            StatusNotificationText.Text = message;
+            StatusNotification.IsVisible = true;
+            _statusNotificationTimer.Stop();
+            _statusNotificationTimer.Start();
+        });
     }
 
     private void SetVolume(int volume)
@@ -1166,11 +1183,11 @@ public sealed partial class MainWindow : Window
         try
         {
             PopulateTrackSelector(AudioTrackSelector, audioTracks, UiText.Muted);
-            SubtitlePickerPopup.IsOpen = false;
             PopulateSubtitleTrackList(subtitleTracks);
             AudioTrackOptionsPanel.IsVisible = audioTracks.Count > 1;
             AudioTrackSelector.IsEnabled = audioTracks.Count > 1;
-            TrackSelectionPanel.IsVisible = true;
+            TrackSelectionPanel.IsVisible = AudioTrackOptionsPanel.IsVisible;
+            if (SubtitlePickerPopup.IsOpen) RefreshSubtitlePickerContent();
         }
         finally
         {
@@ -1302,7 +1319,23 @@ public sealed partial class MainWindow : Window
             var isForced = ReadTrackProperty(index, "forced", false);
             var isExternal = ReadTrackProperty(index, "external", false);
             var isSelected = ReadTrackProperty(index, "selected", false);
-            var label = BuildTrackLabel(type, ordinal, title, language, codec, isDefault, isForced, isExternal);
+            string? sourceTag = null;
+            if (type == "sub")
+            {
+                if (!isExternal)
+                {
+                    sourceTag = "[Dahili]";
+                }
+                else
+                {
+                    var externalPath = ReadTrackProperty(index, "external-filename", string.Empty);
+                    if (_subtitleCache.IsDownloadedSubtitleForVideo(externalPath, _currentVideo ?? string.Empty, _preferences.SubtitleSearchLanguage))
+                        sourceTag = "[Online]";
+                    else
+                        sourceTag = "[Klasör]";
+                }
+            }
+            var label = BuildTrackLabel(type, ordinal, title, language, codec, isDefault, isForced, isExternal, sourceTag);
             metadata.Add(new TrackMetadata(index, type,
                 new MediaTrackOption(id, label, isSelected, language, ordinal)));
         }
@@ -1311,18 +1344,16 @@ public sealed partial class MainWindow : Window
     }
 
     private static string BuildTrackLabel(string type, int ordinal, string title, string language, string codec,
-        bool isDefault, bool isForced, bool isExternal)
+        bool isDefault, bool isForced, bool isExternal, string? sourceTag = null)
     {
-        var labelParts = new List<string>
-        {
-            string.IsNullOrWhiteSpace(title) ? UiText.Format(UiText.TrackNumberFormat, type == "audio" ? UiText.Audio : UiText.Subtitles, ordinal) : title.Trim()
-        };
+        var labelParts = new List<string>();
+        if (!string.IsNullOrEmpty(sourceTag)) labelParts.Add(sourceTag);
+        labelParts.Add(string.IsNullOrWhiteSpace(title) ? UiText.Format(UiText.TrackNumberFormat, type == "audio" ? UiText.Audio : UiText.Subtitles, ordinal) : title.Trim());
         if (!string.IsNullOrWhiteSpace(language) && !string.Equals(language, "und", StringComparison.OrdinalIgnoreCase))
             labelParts.Add(language.Trim());
         if (!string.IsNullOrWhiteSpace(codec)) labelParts.Add(codec.Trim().ToUpperInvariant());
         if (isDefault) labelParts.Add(UiText.Default);
         if (isForced) labelParts.Add(UiText.Forced);
-        if (isExternal) labelParts.Add(UiText.External);
         return string.Join(" · ", labelParts);
     }
 
@@ -1421,15 +1452,18 @@ public sealed partial class MainWindow : Window
     private void OnSubtitleTrackSelectionChanged()
     {
         if (_updatingTrackSelectors || SubtitleTrackList.SelectedItem is not ListBoxItem item) return;
-        _subtitlePickerCloseTimer.Stop();
-        SubtitlePickerPopup.IsOpen = false;
+        ApplySubtitleTrackSelection(item.Tag as MediaTrackOption);
+    }
+
+    private void ApplySubtitleTrackSelection(MediaTrackOption? track)
+    {
         Interlocked.Increment(ref _subtitleSelectionGeneration);
         CancelSubtitleAutomation();
         try
         {
             var hasTrack = false;
             _selectedExternalSubtitlePath = null;
-            if (item.Tag is MediaTrackOption track)
+            if (track is not null)
             {
                 Player.SetProperty("sid", (long)track.Id);
                 _selectedSubtitleTrackId = track.Id;
@@ -1461,8 +1495,53 @@ public sealed partial class MainWindow : Window
             UpdateSubtitleDelayTooltip();
             SavePreferences(_preferences);
             SaveCurrentProgress(force: true);
+            _subtitleAutomationStarted = false;
+
+            _updatingTrackSelectors = true;
+            try
+            {
+                SetListBoxSelection(SubtitleTrackList, track?.Id);
+            }
+            finally
+            {
+                _updatingTrackSelectors = false;
+            }
         }
         catch (MpvException exception) { AppLogger.Error("Subtitle track selection failed", exception); }
+    }
+
+    private void ToggleSubtitlePicker()
+    {
+        SubtitlePickerPopup.IsOpen = !SubtitlePickerPopup.IsOpen;
+        if (SubtitlePickerPopup.IsOpen)
+        {
+            RefreshSubtitlePickerContent();
+        }
+        UpdateControlVisibility();
+    }
+
+    private static void SetSelectorSelection(ComboBox selector, int? trackId)
+    {
+        foreach (var obj in selector.Items)
+        {
+            if (obj is ComboBoxItem cbi)
+            {
+                if (trackId is null && cbi.Tag is null) { selector.SelectedItem = cbi; return; }
+                if (cbi.Tag is MediaTrackOption opt && opt.Id == trackId) { selector.SelectedItem = cbi; return; }
+            }
+        }
+    }
+
+    private static void SetListBoxSelection(ListBox listBox, int? trackId)
+    {
+        foreach (var obj in listBox.Items)
+        {
+            if (obj is ListBoxItem lbi)
+            {
+                if (trackId is null && lbi.Tag is null) { listBox.SelectedItem = lbi; return; }
+                if (lbi.Tag is MediaTrackOption opt && opt.Id == trackId) { listBox.SelectedItem = lbi; return; }
+            }
+        }
     }
 
     private void ApplyPreferredTrack(IReadOnlyList<MediaTrackOption> tracks, string? preferredLanguage, int preferredIndex, string property)
@@ -1668,20 +1747,28 @@ public sealed partial class MainWindow : Window
         var source = _queueDragIndex;
         var destination = _queueDragDestination;
         var wasDragging = _queueDragActive;
-        var releaseTarget = QueueItems.InputHitTest(e.GetPosition(QueueItems));
-        var releasedOnSource = GetQueueItemIndex(releaseTarget) == source;
         ClearQueueDrag();
-        if (wasDragging) ReorderQueuedVideo(source, destination);
-        else if (releasedOnSource) PlayQueuedVideo(source);
+        if (wasDragging)
+        {
+            ReorderQueuedVideo(source, destination);
+        }
+        else if (source >= 0)
+        {
+            PlayQueuedVideo(source);
+        }
         e.Handled = true;
     }
 
     private int GetQueueItemIndex(object? source)
     {
         if (source is not Visual visual) return -1;
+        if ((visual as Control)?.DataContext is QueueListItem directItem)
+            return directItem.Index;
         for (Visual? current = visual; current is not null && current != QueueItems; current = current.GetVisualParent())
         {
             if (current is Button) return -1;
+            if ((current as Control)?.DataContext is QueueListItem dataItem)
+                return dataItem.Index;
             if (current is ListBoxItem item) return QueueItems.IndexFromContainer(item);
         }
         return -1;
@@ -2150,8 +2237,9 @@ public sealed partial class MainWindow : Window
         var pointerOverVideo = pointerWithinWindow && IsPointerInside(VideoFrame, pointerX, pointerY);
         var headerActive = _preferences.AutoHideHeader
             && (headerContextMenuOpen || pointerWithinWindow && (headerHovered || pointerY <= HeaderRevealZoneHeight));
+        var isTrackSelectorOpen = AudioTrackSelector.IsDropDownOpen;
         var bottomActive = _preferences.AutoHideBottom
-            && (bottomContextMenuOpen || SubtitlePickerPopup.IsOpen || pointerWithinWindow
+            && (bottomContextMenuOpen || SubtitlePickerPopup.IsOpen || isTrackSelectorOpen || pointerWithinWindow
                 && (bottomHovered || pointerY >= RootPanel.Bounds.Height - BottomRevealZoneHeight));
         var queueActive = !_queuePanelPinned
             && _queuedVideos.Count > 0
@@ -2250,8 +2338,9 @@ public sealed partial class MainWindow : Window
         var autoHideHeader = _preferences.AutoHideHeader;
         var autoHideBottom = _preferences.AutoHideBottom;
         var showHeader = !autoHideHeader || _headerHoverActive;
+        var isTrackSelectorOpen = AudioTrackSelector.IsDropDownOpen;
         var showBottom = _isDraggingSeek || !autoHideBottom || _bottomHoverActive || _bottomSeekActive
-            || SubtitlePickerPopup.IsOpen;
+            || SubtitlePickerPopup.IsOpen || isTrackSelectorOpen;
 
         RootPanel.RowDefinitions[0].Height = autoHideHeader ? new GridLength(0) : new GridLength(48);
         RootPanel.RowDefinitions[2].Height = autoHideBottom ? new GridLength(0) : GridLength.Auto;
@@ -2337,6 +2426,7 @@ public sealed partial class MainWindow : Window
             case ShortcutDefaults.SubtitleDelayEarlier: AdjustSubtitleDelay(-1); break;
             case ShortcutDefaults.SubtitleDelayLater: AdjustSubtitleDelay(1); break;
             case ShortcutDefaults.SubtitleDelayReset: ResetSubtitleDelay(); break;
+            case ShortcutDefaults.CloseWindow: Close(); break;
             default: return false;
         }
         return true;

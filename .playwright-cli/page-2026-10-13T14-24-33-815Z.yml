@@ -1,0 +1,81 @@
+- generic [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e10]:
+          - generic [ref=e11]: Recall
+          - generic [ref=e12]: Personal memory
+        - generic [ref=e13]:
+          - textbox "Search activities..." [ref=e15]
+          - combobox [ref=e18]:
+            - option "All Time" [selected]
+            - option "Today"
+            - option "Last 7 Days"
+            - option "Last 30 Days"
+          - combobox [ref=e19]:
+            - option "100 items"
+            - option "500 items" [selected]
+            - option "1000 items"
+            - option "5000 items"
+          - combobox [ref=e20]:
+            - option "All Applications" [selected]
+          - button "Refresh" [ref=e21] [cursor=pointer]
+      - generic [ref=e24]: Workspace
+      - generic [ref=e25]:
+        - button "Timeline" [ref=e26] [cursor=pointer]
+        - button "Statistics" [ref=e27] [cursor=pointer]
+        - button "Categories" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: Local & private
+          - generic [ref=e36]: Your activity stays on this device.
+        - button "Settings" [active] [ref=e37] [cursor=pointer]
+  - main [ref=e42]:
+    - generic [ref=e43]:
+      - generic [ref=e44]:
+        - paragraph [ref=e45]: Your digital memory
+        - heading "Activity timeline" [level=1] [ref=e46]
+        - paragraph [ref=e47]: A calm, searchable view of the moments captured on your device.
+      - generic [ref=e48]: Recorder active
+    - generic [ref=e50]:
+      - generic [ref=e51]:
+        - generic [ref=e52]:
+          - generic [ref=e53]: Captured moments
+          - heading "Recent activity" [level=2] [ref=e54]
+        - generic [ref=e55]: Use the timeline to travel through your day
+      - generic [ref=e56]:
+        - generic [ref=e57] [cursor=pointer]:
+          - img "Screenshot" [ref=e58]
+          - generic [ref=e59]: No activities recorded yet.
+          - generic [ref=e60]: Click to view full screen
+        - generic [ref=e64]:
+          - generic [ref=e65]:
+            - generic [ref=e66]: "-"
+            - generic [ref=e67]: "-"
+          - generic [ref=e69]:
+            - generic [ref=e70]: "-"
+            - generic [ref=e72]: 0 / 0
+        - generic [ref=e73]:
+          - slider [ref=e74] [cursor=pointer]
+          - generic [ref=e75]:
+            - generic [ref=e76]: "-"
+            - generic [ref=e77]: "-"
+  - generic [ref=e79]:
+    - button [ref=e80] [cursor=pointer]
+    - heading "Settings" [level=2] [ref=e83]
+    - generic [ref=e84]:
+      - generic [ref=e85]:
+        - generic [ref=e86]: Screenshot Directory Path
+        - textbox "e.g., C:\\screenshots or images" [ref=e87]: images
+      - generic [ref=e88]:
+        - generic [ref=e89]: Screenshot Interval (seconds)
+        - spinbutton "60" [ref=e90]
+      - generic [ref=e91]:
+        - generic [ref=e92]:
+          - text: Auto-Pause on Idle
+          - paragraph [ref=e93]: Pause recording when no activity is detected
+        - checkbox [checked] [ref=e95]
+      - button "Reset all data" [ref=e98] [cursor=pointer]
+      - generic [ref=e101]:
+        - button "Cancel" [ref=e102] [cursor=pointer]
+        - button "Save Changes" [ref=e103] [cursor=pointer]

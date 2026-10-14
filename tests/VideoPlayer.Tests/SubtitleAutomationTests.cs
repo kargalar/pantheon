@@ -179,6 +179,36 @@ public sealed class SubtitleAutomationTests
     }
 
     [Fact]
+    public async Task SearchFollowsRedirectWhenApiReturnsMovedPermanently()
+    {
+        var redirectCount = 0;
+        var handler = new StubHandler((request, _) =>
+        {
+            if (request.RequestUri!.Query.Contains("query=Barry+Lyndon"))
+            {
+                redirectCount++;
+                var redirect = new HttpResponseMessage(HttpStatusCode.MovedPermanently);
+                redirect.Headers.Location = new Uri("https://api.opensubtitles.com/api/v1/subtitles?languages=tr&order_by=download_count&order_direction=desc&query=barry+lyndon&type=movie");
+                return Task.FromResult(redirect);
+            }
+            Assert.Contains("query=barry+lyndon", request.RequestUri.Query);
+            Assert.Equal("secret-key", request.Headers.GetValues("Api-Key").Single());
+            return Task.FromResult(Json(new
+            {
+                data = new[] { new { attributes = new { language = "tr", moviehash_match = false,
+                    feature_details = new { feature_type = "Movie", title = "Barry Lyndon", year = 1975 },
+                    files = new[] { new { file_id = 99 } }, download_count = 100, release = "Barry Lyndon (1975)" } } }
+            }));
+        });
+        using var http = new HttpClient(handler);
+        var client = new OpenSubtitlesClient(http);
+        var results = await client.SearchByQueryAsync("Barry Lyndon", "tr", "secret-key", default);
+        Assert.Single(results);
+        Assert.Equal(99, results[0].FileId);
+        Assert.Equal(1, redirectCount);
+    }
+
+    [Fact]
     public async Task DownloadFollowsHttpsRedirectsWithoutSendingApiKey()
     {
         using var folder = new TestFolder();

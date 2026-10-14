@@ -1,0 +1,43 @@
+- generic [active] [ref=f4e1]:
+  - link "Skip to main content" [ref=f4e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - complementary [ref=f4e3]:
+    - generic [ref=f4e4]:
+      - link [ref=f4e5] [cursor=pointer]:
+        - /url: /
+        - img "Blackbox" [ref=f4e6]
+      - button "Auto-hide Menu" [expanded] [ref=f4e7] [cursor=pointer]
+    - navigation "Content" [ref=f4e11]:
+      - link "Movies" [ref=f4e13] [cursor=pointer]:
+        - /url: /explore/movie/
+      - link "TV Shows" [ref=f4e17] [cursor=pointer]:
+        - /url: /explore/tv/
+      - link "Games" [ref=f4e21] [cursor=pointer]:
+        - /url: /explore/game/
+      - link "Books" [ref=f4e25] [cursor=pointer]:
+        - /url: /explore/book/
+      - link "Music" [ref=f4e29] [cursor=pointer]:
+        - /url: /explore/music/
+      - link "People" [ref=f4e35] [cursor=pointer]:
+        - /url: /explore/person/
+      - link "Companies" [ref=f4e39] [cursor=pointer]:
+        - /url: /explore/company/
+      - link "Discussions" [ref=f4e43] [cursor=pointer]:
+        - /url: /discussions/
+      - link "Lists" [ref=f4e47] [cursor=pointer]:
+        - /url: /lists/
+      - generic [ref=f4e51]: Other
+      - link "Leaderboard" [ref=f4e52] [cursor=pointer]:
+        - /url: /leaderboard/
+      - link "Dynamic Lists" [ref=f4e56] [cursor=pointer]:
+        - /url: /lists/dynamic/
+      - link "Quiz" [ref=f4e61] [cursor=pointer]:
+        - /url: /quiz/
+      - link "Movie Finder" [ref=f4e65] [cursor=pointer]:
+        - /url: /movie-finder/
+      - link "Film Citation Network" [ref=f4e69] [cursor=pointer]:
+        - /url: /citation-network/
+    - link "Login" [ref=f4e77] [cursor=pointer]:
+      - /url: /auth/login/
+  - main [ref=f4e79]:
+    - status "Loading" [ref=f4e81]

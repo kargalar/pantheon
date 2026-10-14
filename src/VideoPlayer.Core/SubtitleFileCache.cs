@@ -11,8 +11,10 @@ public sealed partial class SubtitleFileCache(string directory)
     private const int HashBlockBytes = 64 * 1024;
     private const int MaximumSourceMetadataBytes = 8192;
 
-    public string DownloadPath(string videoPath, string language) => Path.Combine(directory,
-        CreateKey($"download-v1|{MediaStamp(videoPath)}|{language}") + ".srt");
+    public string DownloadPath(string videoPath, string language, int? fileId = null) => Path.Combine(directory,
+        CreateKey(fileId.HasValue
+            ? $"download-v1|{MediaStamp(videoPath)}|{language}|{fileId.Value}"
+            : $"download-v1|{MediaStamp(videoPath)}|{language}") + ".srt");
 
     public bool IsDownloadedSubtitleForVideo(string? subtitlePath, string videoPath, string language)
     {

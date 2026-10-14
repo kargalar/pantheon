@@ -41,6 +41,25 @@ public static class MediaPathRules
 
     public static bool IsSupportedSubtitle(string? path) => HasSupportedExtension(path, SubtitleExtensions);
 
+    public static IReadOnlyList<string> FindAllSubtitlesBesideVideo(string videoPath)
+    {
+        if (string.IsNullOrWhiteSpace(videoPath)) return Array.Empty<string>();
+        var directory = Path.GetDirectoryName(videoPath);
+        if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory)) return Array.Empty<string>();
+
+        try
+        {
+            return Directory.EnumerateFiles(directory)
+                .Where(IsSupportedSubtitle)
+                .OrderBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return Array.Empty<string>();
+        }
+    }
+
     public static IReadOnlyList<string> ResolveExistingVideoPaths(IEnumerable<string?> paths)
     {
         ArgumentNullException.ThrowIfNull(paths);

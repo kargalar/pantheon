@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Media;
 using HanumanInstitute.LibMpv;
 using VideoPlayer.Core;
 
@@ -17,7 +18,19 @@ public sealed partial class MainWindow
 
     private void InitializeSubtitleAutomation()
     {
-        FindSubtitleButton.Click += (_, _) => _ = RunSubtitleAutomationAsync(findOnline: true, synchronize: _preferences.AutoSynchronizeSubtitles, isManual: true);
+        CloseSubtitlePopupButton.Click += (_, _) => SubtitlePickerPopup.IsOpen = false;
+        FindSubtitleButton.Click += (_, _) =>
+        {
+            SubtitleSearchQueryBox.Text = "";
+            _ = SearchOnlineSubtitlesManuallyAsync();
+        };
+        ManualSubtitleSearchButton.Click += (_, _) => _ = SearchOnlineSubtitlesManuallyAsync();
+        SubtitleSearchQueryBox.KeyDown += (_, e) =>
+        {
+            if (e.Key == Avalonia.Input.Key.Enter) _ = SearchOnlineSubtitlesManuallyAsync();
+        };
+        LocalFolderSubtitleList.SelectionChanged += (_, _) => OnLocalFolderSubtitleSelected();
+        OnlineSearchResultsList.SelectionChanged += (_, _) => _ = OnOnlineSearchResultSelectedAsync();
         SynchronizeSubtitleButton.Click += (_, _) => _ = RunSubtitleAutomationAsync(findOnline: false, synchronize: true, isManual: true);
         AddSubtitleButton.Click += (_, _) => _ = OpenSubtitleAsync();
         Player.FileLoaded += (_, _) =>
@@ -204,5 +217,117 @@ public sealed partial class MainWindow
         SubtitleAutomationStatus.Text = status;
         SubtitleAutomationStatus.IsVisible = !string.IsNullOrEmpty(status);
         UpdateSubtitleDelayTooltip();
+    }
+
+    private string? GetOpenSubtitlesApiKey() =>
+        string.IsNullOrWhiteSpace(_preferences.OpenSubtitlesApiKey)
+            ? Environment.GetEnvironmentVariable("PANTHEON_OPENSUBTITLES_API_KEY")
+                ?? Environment.GetEnvironmentVariable("PANTEON_OPENSUBTITLES_API_KEY")
+            : _preferences.OpenSubtitlesApiKey;
+
+    private void RefreshSubtitlePickerContent()
+    {
+        if (_currentVideo is not { } videoPath) return;
+
+        FindSubtitleButton.IsEnabled = true;
+        var localFiles = MediaPathRules.FindAllSubtitlesBesideVideo(videoPath);
+        LocalFolderSubtitleList.Items.Clear();
+        foreach (var file in localFiles)
+        {
+            var fileName = Path.GetFileName(file);
+            var isLoaded = _loadedSubtitles.Contains(Path.GetFullPath(file))
+                || PathsEqual(_selectedExternalSubtitlePath, file);
+            var item = new ListBoxItem
+            {
+                Content = isLoaded ? $"✓ {fileName} (Aktif)" : fileName,
+                Tag = file,
+                Foreground = isLoaded ? Brush.Parse("#00BC7D") : Brush.Parse("#F2F2F2")
+            };
+            LocalFolderSubtitleList.Items.Add(item);
+        }
+        NoLocalSubtitlesNotice.IsVisible = localFiles.Count == 0;
+        NoSubtitlesNotice.IsVisible = SubtitleTrackList.Items.Count <= 1;
+    }
+
+    private void OnLocalFolderSubtitleSelected()
+    {
+        if (LocalFolderSubtitleList.SelectedItem is not ListBoxItem { Tag: string path }) return;
+        LocalFolderSubtitleList.SelectedItem = null;
+        AddSubtitle(path, showInPlayer: true, isAutomatic: false);
+        ShowStatusNotification($"Klasördeki '{Path.GetFileName(path)}' altyazısı yüklendi");
+        RefreshSubtitlePickerContent();
+    }
+
+    private async Task SearchOnlineSubtitlesManuallyAsync()
+    {
+        if (_currentVideo is not { } videoPath) return;
+        var query = SubtitleSearchQueryBox.Text?.Trim();
+        var apiKey = GetOpenSubtitlesApiKey();
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            SetSubtitleAutomationStatus(UiText.OpenSubtitlesKeyRequired);
+            return;
+        }
+
+        SetSubtitleAutomationStatus("OpenSubtitles üzerinde aranıyor...");
+        OnlineSearchResultsList.Items.Clear();
+        OnlineSearchResultsList.IsVisible = true;
+
+        try
+        {
+            var client = new OpenSubtitlesClient(_subtitleHttpClient);
+            IReadOnlyList<SubtitleCandidate> candidates;
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                candidates = await client.SearchCandidatesForVideoAsync(videoPath, _preferences.SubtitleSearchLanguage, apiKey, CancellationToken.None);
+            }
+            else
+            {
+                candidates = await client.SearchByQueryAsync(query, _preferences.SubtitleSearchLanguage, apiKey, CancellationToken.None);
+            }
+
+            if (candidates.Count == 0)
+            {
+                SetSubtitleAutomationStatus("Sonuç bulunamadı.");
+                return;
+            }
+
+            SetSubtitleAutomationStatus($"{candidates.Count} altyazı bulundu. Yüklemek için seçin:");
+            foreach (var candidate in candidates)
+            {
+                var label = $"{candidate.Release} [{candidate.Language}] · ⬇ {candidate.Downloads}";
+                if (candidate.HashMatch) label = "★ " + label;
+                var item = new ListBoxItem { Content = label, Tag = candidate };
+                OnlineSearchResultsList.Items.Add(item);
+            }
+        }
+        catch (Exception ex)
+        {
+            SetSubtitleAutomationStatus("Arama hatası: " + ex.Message);
+        }
+    }
+
+    private async Task OnOnlineSearchResultSelectedAsync()
+    {
+        if (_currentVideo is not { } videoPath || OnlineSearchResultsList.SelectedItem is not ListBoxItem { Tag: SubtitleCandidate candidate }) return;
+        OnlineSearchResultsList.SelectedItem = null;
+        var apiKey = GetOpenSubtitlesApiKey();
+        if (string.IsNullOrWhiteSpace(apiKey)) return;
+
+        SetSubtitleAutomationStatus($"'{candidate.Release}' indiriliyor...");
+        try
+        {
+            var client = new OpenSubtitlesClient(_subtitleHttpClient);
+            var downloadPath = _subtitleCache.DownloadPath(videoPath, _preferences.SubtitleSearchLanguage, candidate.FileId);
+            await client.DownloadAsync(candidate, downloadPath, apiKey, CancellationToken.None);
+            AddSubtitle(downloadPath, showInPlayer: true, isAutomatic: false);
+            SetSubtitleAutomationStatus("Altyazı indirildi ve yüklendi.");
+            ShowStatusNotification($"'{candidate.Release}' indirildi ve yüklendi");
+            RefreshSubtitlePickerContent();
+        }
+        catch (Exception ex)
+        {
+            SetSubtitleAutomationStatus("İndirme hatası: " + ex.Message);
+        }
     }
 }

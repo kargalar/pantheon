@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace VideoPlayer.Core;
 
-public sealed record SubtitleCandidate(int FileId, string Release, bool HashMatch, int Downloads);
+public sealed record SubtitleCandidate(int FileId, string Release, bool HashMatch, int Downloads, string Language = "");
 
 /// <summary>Requests use per-message credentials so download hosts never receive the API key.</summary>
 public sealed class OpenSubtitlesClient(HttpClient httpClient)
@@ -28,12 +28,73 @@ public sealed class OpenSubtitlesClient(HttpClient httpClient)
         return (await SearchAsync(identity, language, apiKey, null, cancellationToken)).FirstOrDefault();
     }
 
+    public async Task<IReadOnlyList<SubtitleCandidate>> SearchCandidatesForVideoAsync(
+        string videoPath, string language, string apiKey, CancellationToken cancellationToken)
+    {
+        var identity = SubtitleMediaIdentity.FromPath(videoPath);
+        if (string.IsNullOrWhiteSpace(identity.Title)) return Array.Empty<SubtitleCandidate>();
+        var results = new List<SubtitleCandidate>();
+        var hash = await SubtitleFileCache.ComputeMovieHashAsync(videoPath, cancellationToken);
+        if (hash is not null)
+        {
+            var hashMatches = await SearchAsync(identity, language, apiKey, hash, cancellationToken);
+            results.AddRange(hashMatches);
+        }
+        var textMatches = await SearchByQueryAsync(identity.Title, language, apiKey, cancellationToken);
+        foreach (var match in textMatches)
+        {
+            if (!results.Any(r => r.FileId == match.FileId))
+                results.Add(match);
+        }
+        return results;
+    }
+
+    public async Task<IReadOnlyList<SubtitleCandidate>> SearchByQueryAsync(
+        string query, string language, string apiKey, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(query)) return Array.Empty<SubtitleCandidate>();
+        var parameters = new SortedDictionary<string, string>
+        {
+            ["languages"] = language,
+            ["order_by"] = "download_count",
+            ["order_direction"] = "desc",
+            ["query"] = query.Trim()
+        };
+        var queryString = string.Join('&', parameters.Select(pair => $"{pair.Key}={WebUtility.UrlEncode(pair.Value)}"));
+        using var response = await SendApiRequestAsync(HttpMethod.Get, $"subtitles?{queryString}", apiKey, null, cancellationToken);
+        await EnsureSuccessAsync(response);
+        using var json = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(cancellationToken),
+            cancellationToken: cancellationToken);
+        return ParseCandidatesAny(json.RootElement);
+    }
+
+    public static IReadOnlyList<SubtitleCandidate> ParseCandidatesAny(JsonElement root)
+    {
+        var candidates = new List<SubtitleCandidate>();
+        if (root.ValueKind != JsonValueKind.Object) return candidates;
+        if (!root.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array) return candidates;
+        foreach (var entry in data.EnumerateArray())
+        {
+            if (entry.ValueKind != JsonValueKind.Object || !entry.TryGetProperty("attributes", out var attributes)
+                || attributes.ValueKind != JsonValueKind.Object) continue;
+            var release = Text(attributes, "release");
+            if (string.IsNullOrWhiteSpace(release) && attributes.TryGetProperty("feature_details", out var feat))
+                release = Text(feat, "title");
+            if (!attributes.TryGetProperty("files", out var files) || files.ValueKind != JsonValueKind.Array) continue;
+            if (files.GetArrayLength() == 0) continue;
+            var fileId = Number(files[0], "file_id");
+            if (fileId <= 0) continue;
+            var lang = Text(attributes, "language");
+            candidates.Add(new(fileId, string.IsNullOrWhiteSpace(release) ? $"Subtitle #{fileId}" : release, false, Number(attributes, "download_count"), lang));
+        }
+        return candidates.OrderByDescending(c => c.Downloads).ToArray();
+    }
+
     public async Task DownloadAsync(
         SubtitleCandidate candidate, string path, string apiKey, CancellationToken cancellationToken)
     {
-        using var request = CreateRequest(HttpMethod.Post, "download", apiKey);
-        request.Content = JsonContent.Create(new { file_id = candidate.FileId, sub_format = "srt", in_utf8 = true });
-        using var response = await httpClient.SendAsync(request, cancellationToken);
+        var postContent = JsonContent.Create(new { file_id = candidate.FileId, sub_format = "srt", in_utf8 = true });
+        using var response = await SendApiRequestAsync(HttpMethod.Post, "download", apiKey, postContent, cancellationToken);
         await EnsureSuccessAsync(response);
         using var json = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(cancellationToken),
             cancellationToken: cancellationToken);
@@ -81,8 +142,7 @@ public sealed class OpenSubtitlesClient(HttpClient httpClient)
             parameters["episode_number"] = identity.Episode!.Value.ToString(CultureInfo.InvariantCulture);
         }
         var query = string.Join('&', parameters.Select(pair => $"{pair.Key}={WebUtility.UrlEncode(pair.Value)}"));
-        using var request = CreateRequest(HttpMethod.Get, $"subtitles?{query}", apiKey);
-        using var response = await httpClient.SendAsync(request, cancellationToken);
+        using var response = await SendApiRequestAsync(HttpMethod.Get, $"subtitles?{query}", apiKey, null, cancellationToken);
         await EnsureSuccessAsync(response);
         using var json = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(cancellationToken),
             cancellationToken: cancellationToken);
@@ -136,21 +196,53 @@ public sealed class OpenSubtitlesClient(HttpClient httpClient)
             if (files.GetArrayLength() != 1) continue;
             var fileId = Number(files[0], "file_id");
             if (fileId <= 0) continue;
-            candidates.Add(new(fileId, Text(attributes, "release"), hashMatch, Number(attributes, "download_count")));
+            candidates.Add(new(fileId, Text(attributes, "release"), hashMatch, Number(attributes, "download_count"), Text(attributes, "language")));
         }
         return candidates.OrderByDescending(candidate => candidate.HashMatch)
             .ThenByDescending(candidate => candidate.Downloads).ThenBy(candidate => candidate.FileId).ToArray();
     }
 
-    private static HttpRequestMessage CreateRequest(HttpMethod method, string endpoint, string apiKey)
+    private async Task<HttpResponseMessage> SendApiRequestAsync(
+        HttpMethod method, string endpointOrQuery, string apiKey, HttpContent? content, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(apiKey) || apiKey.Any(char.IsControl))
             throw new ArgumentException(UiText.CheckYourOpenSubtitlesAPIKey);
-        var request = new HttpRequestMessage(method, new Uri(ApiBase, endpoint));
-        request.Headers.Add("Api-Key", apiKey);
-        request.Headers.UserAgent.ParseAdd("Pantheon v1.0");
-        request.Headers.Accept.ParseAdd("application/json");
-        return request;
+
+        var currentUri = new Uri(ApiBase, endpointOrQuery);
+        const int maxRedirects = 5;
+
+        for (var redirect = 0; redirect <= maxRedirects; redirect++)
+        {
+            using var request = new HttpRequestMessage(method, currentUri);
+            request.Headers.Add("Api-Key", apiKey);
+            request.Headers.UserAgent.ParseAdd("Pantheon v1.0");
+            request.Headers.Accept.ParseAdd("application/json");
+            if (content is not null && redirect == 0)
+            {
+                request.Content = content;
+            }
+
+            var response = await httpClient.SendAsync(request, cancellationToken);
+            if ((int)response.StatusCode is not (301 or 302 or 303 or 307 or 308))
+            {
+                return response;
+            }
+
+            var location = response.Headers.Location;
+            response.Dispose();
+            if (location is null)
+            {
+                throw new InvalidDataException(UiText.TheSubtitleDownloadRedirectIsInvalid);
+            }
+
+            currentUri = location.IsAbsoluteUri ? location : new Uri(currentUri, location);
+            if (currentUri.Scheme != Uri.UriSchemeHttps)
+            {
+                throw new InvalidDataException(UiText.SubtitleDownloadURLsMustUseHTTPS);
+            }
+        }
+
+        throw new InvalidDataException(UiText.TheSubtitleDownloadURLReturnedTooManyRedirects);
     }
 
     private static Task EnsureSuccessAsync(HttpResponseMessage response)

@@ -1,0 +1,47 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - complementary [ref=e3]:
+    - generic [ref=e4]:
+      - link [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "Blackbox" [ref=e6]
+      - button "Auto-hide Menu" [expanded] [ref=e7] [cursor=pointer]
+    - navigation "Content" [ref=e11]:
+      - link "Movies" [ref=e13] [cursor=pointer]:
+        - /url: /explore/movie/
+      - link "TV Shows" [ref=e17] [cursor=pointer]:
+        - /url: /explore/tv/
+      - link "Games" [ref=e21] [cursor=pointer]:
+        - /url: /explore/game/
+      - link "Books" [ref=e25] [cursor=pointer]:
+        - /url: /explore/book/
+      - link "Music" [ref=e29] [cursor=pointer]:
+        - /url: /explore/music/
+      - link "People" [ref=e35] [cursor=pointer]:
+        - /url: /explore/person/
+      - link "Companies" [ref=e39] [cursor=pointer]:
+        - /url: /explore/company/
+      - link "Discussions" [ref=e43] [cursor=pointer]:
+        - /url: /discussions/
+      - link "Lists" [ref=e47] [cursor=pointer]:
+        - /url: /lists/
+      - generic [ref=e51]: Other
+      - link "Liderlik Tablosu" [ref=e52] [cursor=pointer]:
+        - /url: /leaderboard/
+      - link "Dinamik Listeler" [ref=e56] [cursor=pointer]:
+        - /url: /lists/dynamic/
+      - link "Quiz" [ref=e61] [cursor=pointer]:
+        - /url: /quiz/
+      - link "Movie Finder" [ref=e65] [cursor=pointer]:
+        - /url: /movie-finder/
+      - link "Film Citation Network" [ref=e69] [cursor=pointer]:
+        - /url: /citation-network/
+    - generic [ref=e80]:
+      - button "English" [pressed] [ref=e81] [cursor=pointer]: EN
+      - button "Türkçe" [ref=e82] [cursor=pointer]: TR
+    - link "Login" [ref=e84] [cursor=pointer]:
+      - /url: /auth/login/
+  - main [ref=e86]:
+    - status "Loading" [ref=e88]
+  - button "Open Next.js Dev Tools" [ref=e95] [cursor=pointer]
