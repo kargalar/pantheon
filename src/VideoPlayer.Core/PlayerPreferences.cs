@@ -10,11 +10,25 @@ public sealed record PlayerPreferences
     public const int MaximumSubtitleFontSize = 64;
     public const int MinimumSubtitleMargin = 0;
     public const int MaximumSubtitleMargin = 100;
+    public const int MinimumSubtitlePosition = 0;
+    public const int MaximumSubtitlePosition = 100;
+    public const int MinimumSubtitleBackgroundOpacity = 0;
+    public const int MaximumSubtitleBackgroundOpacity = 100;
     public const double MinimumPlaybackSpeed = 0.25;
     public const double MaximumPlaybackSpeed = 10.0;
 
     public int SubtitleFontSize { get; init; } = 42;
     public int SubtitleMargin { get; init; } = 30;
+    public string SubtitleFontFamily { get; init; } = "sans-serif";
+    public bool SubtitleBold { get; init; }
+    public bool SubtitleItalic { get; init; }
+    public string SubtitleTextColor { get; init; } = "#FFFFFF";
+    public bool SubtitleBackgroundEnabled { get; init; }
+    public int SubtitleBackgroundOpacity { get; init; } = 75;
+    public double SubtitleOutlineSize { get; init; } = 1.65;
+    public double SubtitleShadowOffset { get; init; }
+    public int SubtitlePosition { get; init; } = 100;
+    public string SubtitleHorizontalAlignment { get; init; } = SubtitleAppearanceRules.CenterAlignment;
     public int Volume { get; init; } = 100;
     public bool Muted { get; init; }
     public double PlaybackSpeed { get; init; } = 1.0;
@@ -40,9 +54,25 @@ public sealed record PlayerPreferences
     public int PreferredSubtitleTrackIndex { get; init; }
     public Dictionary<string, string> Shortcuts { get; init; } = ShortcutDefaults.Create();
     public string? ScreenshotDirectory { get; init; }
+    public string ScreenshotSaveMode { get; init; } = ScreenshotSaveModeRules.Original;
     public string MouseRegionOrientation { get; init; } = "Vertical";
     public int MouseRegionCount { get; init; } = 2;
     public Dictionary<string, string> MouseBindings { get; init; } = MouseBindingDefaults.Create();
+}
+
+public static class ScreenshotSaveModeRules
+{
+    public const string Original = "original";
+    public const string Optimized = "optimized";
+    public const int OptimizedJpegQuality = 95;
+
+    public static string Normalize(string? mode) => mode?.Trim().ToLowerInvariant() switch
+    {
+        Optimized => Optimized,
+        _ => Original
+    };
+
+    public static string GetExtension(string? mode) => Normalize(mode) == Optimized ? ".jpg" : ".png";
 }
 
 public static class PlaybackSpeedRules
@@ -50,6 +80,30 @@ public static class PlaybackSpeedRules
     public static double Clamp(double speed) => double.IsFinite(speed)
         ? Math.Clamp(Math.Round(speed, 2), PlayerPreferences.MinimumPlaybackSpeed, PlayerPreferences.MaximumPlaybackSpeed)
         : 1.0;
+}
+
+public static class SubtitleAppearanceRules
+{
+    public const string LeftAlignment = "left";
+    public const string CenterAlignment = "center";
+    public const string RightAlignment = "right";
+
+    public static string NormalizeFontFamily(string? value) => string.IsNullOrWhiteSpace(value)
+        ? "sans-serif" : value.Trim()[..Math.Min(value.Trim().Length, 100)];
+
+    public static string NormalizeTextColor(string? value)
+    {
+        var color = value?.Trim() ?? string.Empty;
+        return color.Length == 7 && color[0] == '#' && color.AsSpan(1).IndexOfAnyExcept("0123456789abcdefABCDEF") < 0
+            ? color.ToUpperInvariant() : "#FFFFFF";
+    }
+
+    public static string NormalizeHorizontalAlignment(string? value) => value?.Trim().ToLowerInvariant() switch
+    {
+        LeftAlignment => LeftAlignment,
+        RightAlignment => RightAlignment,
+        _ => CenterAlignment
+    };
 }
 
 public static class VideoDisplayRules
@@ -362,6 +416,17 @@ public sealed class PlayerPreferencesStore(string settingsPath)
                 preferences.SubtitleMargin,
                 PlayerPreferences.MinimumSubtitleMargin,
                 PlayerPreferences.MaximumSubtitleMargin),
+            SubtitleFontFamily = SubtitleAppearanceRules.NormalizeFontFamily(preferences.SubtitleFontFamily),
+            SubtitleTextColor = SubtitleAppearanceRules.NormalizeTextColor(preferences.SubtitleTextColor),
+            SubtitleBackgroundOpacity = Math.Clamp(preferences.SubtitleBackgroundOpacity,
+                PlayerPreferences.MinimumSubtitleBackgroundOpacity, PlayerPreferences.MaximumSubtitleBackgroundOpacity),
+            SubtitleOutlineSize = double.IsFinite(preferences.SubtitleOutlineSize)
+                ? Math.Clamp(preferences.SubtitleOutlineSize, 0, 10) : 1.65,
+            SubtitleShadowOffset = double.IsFinite(preferences.SubtitleShadowOffset)
+                ? Math.Clamp(preferences.SubtitleShadowOffset, 0, 20) : 0,
+            SubtitlePosition = Math.Clamp(preferences.SubtitlePosition,
+                PlayerPreferences.MinimumSubtitlePosition, PlayerPreferences.MaximumSubtitlePosition),
+            SubtitleHorizontalAlignment = SubtitleAppearanceRules.NormalizeHorizontalAlignment(preferences.SubtitleHorizontalAlignment),
             Volume = Math.Clamp(preferences.Volume, 0, PlayerPreferences.MaximumVolume),
             PlaybackSpeed = PlaybackSpeedRules.Clamp(preferences.PlaybackSpeed),
             PreferredAudioLanguage = NormalizeTrackLanguage(preferences.PreferredAudioLanguage),
@@ -376,6 +441,7 @@ public sealed class PlayerPreferencesStore(string settingsPath)
             VideoAspectRatio = VideoDisplayRules.NormalizeAspectRatio(preferences.VideoAspectRatio),
             VideoScaleMode = VideoDisplayRules.NormalizeScaleMode(preferences.VideoScaleMode),
             AccentColor = NormalizeAccentColor(preferences.AccentColor),
+            ScreenshotSaveMode = ScreenshotSaveModeRules.Normalize(preferences.ScreenshotSaveMode),
             Shortcuts = shortcuts,
             PlaybackSpeedStep = double.IsFinite(preferences.PlaybackSpeedStep)
                 ? Math.Clamp(preferences.PlaybackSpeedStep, 0.05, 1.0) : 0.10,

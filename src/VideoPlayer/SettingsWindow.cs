@@ -344,6 +344,78 @@ internal sealed class SettingsWindow : Window
 
     private void BuildSubtitlesPage(StackPanel layout)
     {
+        layout.Children.Add(SectionTitle("Altyazı görünümü"));
+        layout.Children.Add(Description("Yazı tipi, renk, kalınlık ve konumu değiştirin. Değişiklikler açık videoya uygulanır ve kaydedilir."));
+
+        var fontFamily = new TextBox
+        {
+            Text = _preferences.SubtitleFontFamily,
+            PlaceholderText = "sans-serif",
+            MaxWidth = 500
+        };
+        fontFamily.TextChanged += (_, _) => UpdatePreferences(
+            _preferences with { SubtitleFontFamily = fontFamily.Text ?? string.Empty }, applyAppearance: true);
+        AutomationProperties.SetName(fontFamily, "Altyazı yazı tipi");
+        layout.Children.Add(SectionTitle("Yazı tipi"));
+        layout.Children.Add(fontFamily);
+
+        var textColor = new TextBox
+        {
+            Text = _preferences.SubtitleTextColor,
+            PlaceholderText = "#FFFFFF",
+            MaxWidth = 180
+        };
+        textColor.TextChanged += (_, _) =>
+        {
+            if (IsHexColor(textColor.Text))
+                UpdatePreferences(_preferences with { SubtitleTextColor = textColor.Text! }, applyAppearance: true);
+        };
+        AutomationProperties.SetName(textColor, "Altyazı yazı rengi (HEX)");
+        layout.Children.Add(SectionTitle("Yazı rengi (HEX)"));
+        layout.Children.Add(textColor);
+
+        var bold = new CheckBox { Content = "Kalın", IsChecked = _preferences.SubtitleBold, Foreground = Brush.Parse("#EAEAEA") };
+        bold.Click += (_, _) => UpdatePreferences(_preferences with { SubtitleBold = bold.IsChecked == true }, applyAppearance: true);
+        layout.Children.Add(bold);
+        var italic = new CheckBox { Content = "İtalik", IsChecked = _preferences.SubtitleItalic, Foreground = Brush.Parse("#EAEAEA") };
+        italic.Click += (_, _) => UpdatePreferences(_preferences with { SubtitleItalic = italic.IsChecked == true }, applyAppearance: true);
+        layout.Children.Add(italic);
+
+        var background = new CheckBox
+        {
+            Content = "Altyazı arkasında kutu göster",
+            IsChecked = _preferences.SubtitleBackgroundEnabled,
+            Foreground = Brush.Parse("#EAEAEA")
+        };
+        background.Click += (_, _) => UpdatePreferences(
+            _preferences with { SubtitleBackgroundEnabled = background.IsChecked == true }, applyAppearance: true);
+        layout.Children.Add(background);
+        AddSliderSetting(layout, "Arka plan opaklığı", _preferences.SubtitleBackgroundOpacity, 0, 100,
+            value => UpdatePreferences(_preferences with { SubtitleBackgroundOpacity = (int)value }, applyAppearance: true),
+            value => $"{value:0}%");
+        AddSliderSetting(layout, "Yazı kenarlığı kalınlığı", _preferences.SubtitleOutlineSize, 0, 10,
+            value => UpdatePreferences(_preferences with { SubtitleOutlineSize = Math.Round(value, 1) }, applyAppearance: true),
+            value => value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture));
+        AddSliderSetting(layout, "Gölge mesafesi", _preferences.SubtitleShadowOffset, 0, 20,
+            value => UpdatePreferences(_preferences with { SubtitleShadowOffset = Math.Round(value, 1) }, applyAppearance: true),
+            value => value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture));
+
+        AddSliderSetting(layout, "Dikey konum", _preferences.SubtitlePosition, 0, 100,
+            value => UpdatePreferences(_preferences with { SubtitlePosition = (int)value }, applyAppearance: true),
+            value => $"{value:0}%");
+        layout.Children.Add(SectionTitle("Yatay hizalama"));
+        var alignment = CreateVideoDisplaySelector(
+            [("Sol", SubtitleAppearanceRules.LeftAlignment), ("Orta", SubtitleAppearanceRules.CenterAlignment), ("Sağ", SubtitleAppearanceRules.RightAlignment)],
+            _preferences.SubtitleHorizontalAlignment);
+        alignment.SelectionChanged += (_, _) =>
+        {
+            if (alignment.SelectedItem is ComboBoxItem { Tag: string value })
+                UpdatePreferences(_preferences with { SubtitleHorizontalAlignment = value }, applyAppearance: true);
+        };
+        layout.Children.Add(alignment);
+
+        layout.Children.Add(Description("ASS/SSA altyazılar kendi biçimlendirmelerini taşıyabilir; görünüm seçenekleri bu biçimleri zorlayarak uygulanır."));
+
         layout.Children.Add(Description("Videolar açıldığında online altyazıları otomatik arayıp indirebilir ve harici altyazıları ses akışıyla senkronize edebilirsiniz."));
         var find = new CheckBox { Content = "Video açıldığında otomatik olarak online altyazı ara ve indir", IsChecked = _preferences.AutoFindSubtitles };
         find.Click += (_, _) => UpdatePreferences(_preferences with { AutoFindSubtitles = find.IsChecked == true }, false);
@@ -397,6 +469,10 @@ internal sealed class SettingsWindow : Window
         }
         return selector;
     }
+
+    private static bool IsHexColor(string? value) => value is { Length: 7 }
+        && value[0] == '#'
+        && value.AsSpan(1).IndexOfAnyExcept("0123456789abcdefABCDEF") < 0;
 
     private void BuildKeyboardPage(StackPanel layout)
     {
@@ -568,6 +644,28 @@ internal sealed class SettingsWindow : Window
     private void BuildScreenshotsPage(StackPanel layout)
     {
         layout.Children.Add(Description(UiText.ChooseWhereSubtitleFreeFramesAreSavedEach));
+        layout.Children.Add(SectionTitle(UiText.ScreenshotSaveMode));
+        var saveModes = new[]
+        {
+            new ComboBoxItem { Content = UiText.ScreenshotOriginalMode, Tag = ScreenshotSaveModeRules.Original },
+            new ComboBoxItem { Content = UiText.ScreenshotOptimizedMode, Tag = ScreenshotSaveModeRules.Optimized }
+        };
+        var saveMode = ScreenshotSaveModeRules.Normalize(_preferences.ScreenshotSaveMode);
+        var saveModePicker = new ComboBox
+        {
+            ItemsSource = saveModes,
+            SelectedItem = saveModes.First(item => Equals(item.Tag, saveMode)),
+            MinWidth = 280,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left
+        };
+        saveModePicker.SelectionChanged += (_, _) =>
+        {
+            if (saveModePicker.SelectedItem is ComboBoxItem { Tag: string selectedMode })
+                UpdatePreferences(_preferences with { ScreenshotSaveMode = selectedMode }, applyAppearance: false);
+        };
+        layout.Children.Add(saveModePicker);
+        layout.Children.Add(Description(UiText.ScreenshotSaveModeHelp));
+
         var captureDirectory = CurrentScreenshotDirectory();
         var pathLabel = new TextBlock
         {

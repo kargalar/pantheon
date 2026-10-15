@@ -359,7 +359,7 @@ public sealed partial class MainWindow
         try
         {
             var client = new OpenSubtitlesClient(_subtitleHttpClient);
-            var downloadPath = _subtitleCache.DownloadPath(videoPath, _preferences.SubtitleSearchLanguage, candidate.FileId);
+            var downloadPath = _subtitleCache.DownloadPath(videoPath, _preferences.SubtitleSearchLanguage);
             await client.DownloadAsync(candidate, downloadPath, apiKey, CancellationToken.None);
             AddSubtitle(downloadPath, showInPlayer: true, isAutomatic: false);
             SetSubtitleAutomationStatus("Altyazı indirildi ve yüklendi.");

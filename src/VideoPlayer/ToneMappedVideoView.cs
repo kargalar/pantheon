@@ -4,6 +4,8 @@ using Avalonia.Media.Imaging;
 using Avalonia.OpenGL;
 using Avalonia.Platform;
 using HanumanInstitute.LibMpv.Avalonia;
+using SkiaSharp;
+using VideoPlayer.Core;
 using static Avalonia.OpenGL.GlConsts;
 
 namespace VideoPlayer;
@@ -14,7 +16,7 @@ public sealed class ToneMappedVideoView : OpenGlView
     private static readonly TimeSpan CaptureTimeout = TimeSpan.FromSeconds(10);
     private CaptureRequest? _captureRequest;
 
-    public async Task CaptureFrameAsync(string path, bool includeSubtitles = false)
+    public async Task CaptureFrameAsync(string path, bool includeSubtitles = false, bool optimized = false)
     {
         VerifyAccess();
         if (_captureRequest is not null) throw new InvalidOperationException("A frame capture is already pending.");
@@ -23,18 +25,18 @@ public sealed class ToneMappedVideoView : OpenGlView
         var width = MpvContext.GetProperty<int>("video-out-params/dw");
         var height = MpvContext.GetProperty<int>("video-out-params/dh");
         if (width <= 0 || height <= 0) throw new InvalidOperationException("No video frame is available.");
-        var paused = MpvContext.GetProperty<bool>("pause");
         var subtitlesVisible = MpvContext.GetProperty<bool>("sub-visibility");
         var osdLevel = MpvContext.GetProperty<long>("osd-level");
         var aspect = MpvContext.GetProperty<string>("video-aspect-override");
         var keepAspect = MpvContext.GetProperty<bool>("keepaspect");
         var panscan = MpvContext.GetProperty<double>("panscan");
-        var request = new CaptureRequest(width, height);
+        var settings = new CaptureSettings(subtitlesVisible, osdLevel, aspect, keepAspect, panscan);
+        var request = new CaptureRequest(width, height, settings);
         byte[] pixels;
         try
         {
-            // No window frame is drawn while these capture-only settings are active.
-            MpvContext.SetProperty("pause", true);
+            // Capture-only settings are restored inside the render callback so playback
+            // can draw its next frame without showing the temporary capture layout.
             MpvContext.SetProperty("sub-visibility", includeSubtitles && subtitlesVisible);
             MpvContext.SetProperty("osd-level", 0L);
             MpvContext.SetPropertyString("video-aspect-override", "no");
@@ -47,17 +49,18 @@ public sealed class ToneMappedVideoView : OpenGlView
         finally
         {
             _captureRequest = null;
-            MpvContext.SetPropertyString("video-aspect-override", aspect);
-            MpvContext.SetProperty("keepaspect", keepAspect);
-            MpvContext.SetProperty("panscan", panscan);
-            MpvContext.SetProperty("osd-level", osdLevel);
-            MpvContext.SetProperty("sub-visibility", subtitlesVisible);
-            MpvContext.SetProperty("pause", paused);
+            RestoreCaptureSettings(settings);
             RequestNextFrameRendering();
         }
 
         await Task.Run(() =>
         {
+            if (optimized)
+            {
+                SaveHighQualityJpeg(pixels, width, height, path);
+                return;
+            }
+
             using var bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormats.Rgba8888, AlphaFormat.Opaque);
             using (var framebuffer = bitmap.Lock())
             {
@@ -67,6 +70,16 @@ public sealed class ToneMappedVideoView : OpenGlView
             }
             SaveSrgbPng(bitmap, path);
         });
+    }
+
+    private static void SaveHighQualityJpeg(byte[] pixels, int width, int height, string path)
+    {
+        using var bitmap = new SKBitmap(new SKImageInfo(width, height, SKColorType.Rgba8888, SKAlphaType.Opaque));
+        Marshal.Copy(pixels, 0, bitmap.GetPixels(), pixels.Length);
+        using var encoded = bitmap.Encode(SKEncodedImageFormat.Jpeg, ScreenshotSaveModeRules.OptimizedJpegQuality)
+            ?? throw new InvalidOperationException("The image encoder could not create a JPEG screenshot.");
+        using var output = File.Create(path);
+        encoded.SaveTo(output);
     }
 
     public async Task<Bitmap> CapturePreviewFrameAsync(int targetWidth)
@@ -110,12 +123,27 @@ public sealed class ToneMappedVideoView : OpenGlView
         if (_captureRequest is { } request)
         {
             if (request.Completion.Task.IsCompleted) return;
-            try { request.Completion.TrySetResult(RenderCapture(gl, fbo, request.Width, request.Height)); }
-            catch (Exception exception) { request.Completion.TrySetException(exception); }
-            // Preserve the previous displayed frame until capture settings are restored.
+            byte[]? pixels = null;
+            Exception? captureError = null;
+            try { pixels = RenderCapture(gl, fbo, request.Width, request.Height); }
+            catch (Exception exception) { captureError = exception; }
+
+            if (request.Settings is { } settings) RestoreCaptureSettings(settings);
+            base.OnOpenGlRender(gl, fbo);
+            if (captureError is null) request.Completion.TrySetResult(pixels!);
+            else request.Completion.TrySetException(captureError);
             return;
         }
         base.OnOpenGlRender(gl, fbo);
+    }
+
+    private void RestoreCaptureSettings(CaptureSettings settings)
+    {
+        MpvContext.SetPropertyString("video-aspect-override", settings.Aspect);
+        MpvContext.SetProperty("keepaspect", settings.KeepAspect);
+        MpvContext.SetProperty("panscan", settings.Panscan);
+        MpvContext.SetProperty("osd-level", settings.OsdLevel);
+        MpvContext.SetProperty("sub-visibility", settings.SubtitlesVisible);
     }
 
     private unsafe byte[] RenderCapture(GlInterface gl, int windowFramebuffer, int width, int height)
@@ -176,7 +204,9 @@ public sealed class ToneMappedVideoView : OpenGlView
     [UnmanagedFunctionPointer(CallingConvention.Winapi)]
     private unsafe delegate void ReadPixels(int x, int y, int width, int height, int format, int type, void* pixels);
 
-    private sealed record CaptureRequest(int Width, int Height)
+    private sealed record CaptureSettings(bool SubtitlesVisible, long OsdLevel, string Aspect, bool KeepAspect, double Panscan);
+
+    private sealed record CaptureRequest(int Width, int Height, CaptureSettings? Settings = null)
     {
         public TaskCompletionSource<byte[]> Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }

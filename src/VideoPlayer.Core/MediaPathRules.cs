@@ -130,13 +130,15 @@ public static class MediaPathRules
             .FirstOrDefault();
     }
 
-    public static string CreateCapturePath(string videoPath, string captureDirectory, DateTimeOffset timestamp)
+    public static string CreateCapturePath(string videoPath, string captureDirectory, DateTimeOffset timestamp,
+        string? saveMode = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(videoPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(captureDirectory);
 
         var videoName = Path.GetFileNameWithoutExtension(videoPath);
-        var fileName = $"{videoName}-{timestamp:yyyyMMdd-HHmmss-fff}.png";
+        var extension = ScreenshotSaveModeRules.GetExtension(saveMode);
+        var fileName = $"{videoName}-{timestamp:yyyyMMdd-HHmmss-fff}{extension}";
         return Path.Combine(captureDirectory, videoName, fileName);
     }
 

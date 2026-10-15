@@ -41,7 +41,7 @@ This adds Pantheon and its format-specific icons to the Windows app list without
 - Use the volume slider to adjust playback volume
 - Drag the timeline to seek continuously. Playback pauses during the gesture and resumes on release if it was playing. While holding the timeline, pull upward to reveal a frame preview above the bar; move left or right to choose another frame. Preview images are temporary and are removed after use.
 
-Use **Settings** to customize appearance, playback, keyboard shortcuts, mouse zones, and the screenshot folder. Screenshots are saved in a subfolder named after the video inside the selected folder; by default, that folder is `Pictures\Pantheon`. Mouse actions can be mapped separately for up to three vertical or horizontal video regions. The top and bottom control bars can hide until the pointer reaches a window edge; toggle this in Appearance or by right-clicking either bar. Settings are saved under `%APPDATA%\LumaPlayer\settings.json` to preserve existing user preferences.
+Use **Settings** to customize appearance, playback, keyboard shortcuts, mouse zones, and screenshots. In Settings > Screenshots, choose **Original (PNG, lossless)** or **Optimized (high-quality JPEG)**. Original is selected by default. Screenshots are saved in a subfolder named after the video inside the selected folder; by default, that folder is `Pictures\Pantheon`. Mouse actions can be mapped separately for up to three vertical or horizontal video regions. The top and bottom control bars can hide until the pointer reaches a window edge; toggle this in Appearance or by right-clicking either bar. Settings are saved under `%APPDATA%\LumaPlayer\settings.json` to preserve existing user preferences.
 
 Playback positions, subtitle selections and per-video subtitle delays are saved under `%APPDATA%\LumaPlayer\playback.json`.
 
@@ -82,7 +82,7 @@ dotnet run --project .\tools\SubtitleAutomationCheck -- .\tests\VideoPlayer.Test
 
 This checks automatic repository search/download for both films and episodes through controlled HTTP responses, including when a local subtitle is already loaded or a matching Turkish embedded track exists. It also checks real speech synchronization, reopening/manual-delay persistence, download cache reuse, continued playback, and cancellation during manual timing changes, episode switching and audio switching. The cancellation checks use a deliberately slow local worker. These controlled repository checks do not claim a live authenticated OpenSubtitles download.
 
-The screenshot command saves the video at its original resolution without subtitles or player UI. Screenshots use the embedded GPU renderer's HDR tone mapping, so HDR videos produce standard 8-bit SDR PNGs with the same colors as playback.
+The screenshot command saves the video at its original resolution without subtitles or player UI. Screenshots use the embedded GPU renderer's HDR tone mapping, so HDR videos produce standard 8-bit SDR images with the same colors as playback. Original mode writes PNG; optimized mode writes high-quality JPEG with minimal visible loss.
 
 To verify HDR screenshots with the actual Avalonia/OpenGL renderer on Windows, use an HDR video longer than 61 seconds:
 

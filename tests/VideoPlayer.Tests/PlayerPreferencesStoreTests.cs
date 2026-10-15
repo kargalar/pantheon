@@ -48,6 +48,7 @@ public sealed class PlayerPreferencesStoreTests
             AccentColor = "#C9364F",
             SubtitleDelayStep = 0.25,
             ScreenshotDirectory = "C:\\Captures",
+            ScreenshotSaveMode = ScreenshotSaveModeRules.Optimized,
             MouseRegionOrientation = "Horizontal",
             MouseRegionCount = 3,
             MouseBindings = new Dictionary<string, string> { ["2:WheelUp"] = ShortcutDefaults.SpeedUp }
@@ -82,6 +83,7 @@ public sealed class PlayerPreferencesStoreTests
         Assert.Equal(preferences.PlaybackSpeedStep, loaded.PlaybackSpeedStep);
         Assert.Equal(preferences.Shortcuts.OrderBy(pair => pair.Key), loaded.Shortcuts.OrderBy(pair => pair.Key));
         Assert.Equal(preferences.ScreenshotDirectory, loaded.ScreenshotDirectory);
+        Assert.Equal(preferences.ScreenshotSaveMode, loaded.ScreenshotSaveMode);
         Assert.Equal(preferences.MouseRegionOrientation, loaded.MouseRegionOrientation);
         Assert.Equal(preferences.MouseRegionCount, loaded.MouseRegionCount);
         Assert.Equal(ShortcutDefaults.SpeedUp, loaded.MouseBindings["2:WheelUp"]);
@@ -290,6 +292,7 @@ public sealed class PlayerPreferencesStoreTests
         Assert.Equal(defaults.SubtitleDelayStep, preferences.SubtitleDelayStep);
         Assert.Equal(defaults.Shortcuts.OrderBy(pair => pair.Key), preferences.Shortcuts.OrderBy(pair => pair.Key));
         Assert.Null(preferences.ScreenshotDirectory);
+        Assert.Equal(ScreenshotSaveModeRules.Original, preferences.ScreenshotSaveMode);
         Assert.Equal("Vertical", preferences.MouseRegionOrientation);
         Assert.Equal(2, preferences.MouseRegionCount);
         Assert.Equal(MouseBindingDefaults.Create(), preferences.MouseBindings);

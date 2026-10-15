@@ -76,7 +76,7 @@ public sealed partial class MainWindow
             {
                 var targetPosition = TimelinePosition.SecondsFromPercent(e.NewValue, duration);
                 Player.Seek(targetPosition, SeekOption.Absolute | SeekOption.Keyframes).Invoke();
-                ShowBottomAfterSeek();
+                ShowBottomTemporarily();
             }
         };
         _seekTimer.Tick += (_, _) => RefreshTimelineDrag();
@@ -463,7 +463,7 @@ public sealed partial class MainWindow
         if (!_timelineClosing)
         {
             Player.Seek(_seekTarget, SeekOption.Absolute | SeekOption.Exact).Invoke();
-            ShowBottomAfterSeek();
+            ShowBottomTemporarily();
             Player.SetProperty("pause", !_resumeAfterSeek);
             _isPlaying = _resumeAfterSeek;
             PlayButton.Content = _isPlaying ? "Ⅱ" : "▶";

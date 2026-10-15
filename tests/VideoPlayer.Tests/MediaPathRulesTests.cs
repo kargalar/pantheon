@@ -162,6 +162,17 @@ public sealed class MediaPathRulesTests
     }
 
     [Fact]
+    public void CreateCapturePath_UsesJpegExtensionForOptimizedScreenshots()
+    {
+        var timestamp = new DateTimeOffset(2026, 9, 29, 14, 5, 6, 123, TimeSpan.Zero);
+
+        var result = MediaPathRules.CreateCapturePath("C:\\Movies\\Example.mkv", "C:\\Captures", timestamp,
+            ScreenshotSaveModeRules.Optimized);
+
+        Assert.Equal(Path.Combine("C:\\Captures", "Example", "Example-20260929-140506-123.jpg"), result);
+    }
+
+    [Fact]
     public void CreateCapturePath_RejectsEmptyInput()
     {
         Assert.Throws<ArgumentException>(() => MediaPathRules.CreateCapturePath(" ", "C:\\Pictures", DateTimeOffset.UtcNow));

@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -31,7 +32,7 @@ public sealed partial class MainWindow : Window
     private const ulong ChapterObservationId = 3;
     private const int MaximumChapterCount = 10_000;
     private static readonly TimeSpan CursorHideDelay = TimeSpan.FromSeconds(3);
-    private static readonly TimeSpan BottomSeekVisibilityDuration = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan BottomActivityVisibilityDuration = TimeSpan.FromSeconds(3);
     private static readonly TimeSpan PanelFadeDuration = TimeSpan.FromMilliseconds(120);
     private static readonly TimeSpan PlaybackStatusFailureLogDelay = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan PreferenceUpdateDebounce = TimeSpan.FromMilliseconds(120);
@@ -46,7 +47,7 @@ public sealed partial class MainWindow : Window
     private readonly DispatcherTimer _subtitleSyncNotificationTimer;
     private readonly DispatcherTimer _statusNotificationTimer = new() { Interval = TimeSpan.FromSeconds(3.5) };
     private readonly DispatcherTimer _cursorHideTimer = new() { Interval = CursorHideDelay };
-    private readonly DispatcherTimer _bottomSeekVisibilityTimer = new() { Interval = BottomSeekVisibilityDuration };
+    private readonly DispatcherTimer _bottomActivityVisibilityTimer = new() { Interval = BottomActivityVisibilityDuration };
     private readonly DispatcherTimer _panelFadeTimer = new() { Interval = TimeSpan.FromMilliseconds(16) };
     private readonly Dictionary<Control, PanelFadeState> _panelFadeStates = [];
     private readonly PlayerPreferencesStore _preferencesStore;
@@ -56,6 +57,7 @@ public sealed partial class MainWindow : Window
     private readonly Task _playbackProgressLoadTask;
     private Task _queuePersistenceTask = Task.CompletedTask;
     private Task _captureTask = Task.CompletedTask;
+    private Bitmap? _captureThumbnail;
     private IReadOnlyList<string> _startupVideoPaths = Array.Empty<string>();
     private readonly List<string> _queuedVideos = [];
     private bool _queueItemsDirty = true;
@@ -102,7 +104,7 @@ public sealed partial class MainWindow : Window
     private DateTime _playbackStatusUnavailableSince = DateTime.MinValue;
     private bool _headerHoverActive;
     private bool _bottomHoverActive;
-    private bool _bottomSeekActive;
+    private bool _bottomActivityActive;
     private bool _queuePanelPinned;
     private bool _queuePanelHoverActive;
     private WindowsKeyboardHook? _keyboardHook;
@@ -195,10 +197,10 @@ public sealed partial class MainWindow : Window
             StatusNotification.IsVisible = false;
         };
         _cursorHideTimer.Tick += (_, _) => HideCursor();
-        _bottomSeekVisibilityTimer.Tick += (_, _) =>
+        _bottomActivityVisibilityTimer.Tick += (_, _) =>
         {
-            _bottomSeekVisibilityTimer.Stop();
-            _bottomSeekActive = false;
+            _bottomActivityVisibilityTimer.Stop();
+            _bottomActivityActive = false;
             UpdateControlVisibility();
         };
         _panelFadeTimer.Tick += (_, _) => UpdatePanelFades();
@@ -217,11 +219,11 @@ public sealed partial class MainWindow : Window
         };
         PlayButton.Click += (_, _) => TogglePlayback();
         SubtitleButton.Click += (_, _) => ToggleSubtitlePicker();
+        AudioTrackButton.Click += (_, _) => ToggleAudioTrackPicker();
         InitializeSubtitleAutomation();
-        AudioTrackSelector.SelectionChanged += (_, _) => OnAudioTrackSelectionChanged();
+        AudioTrackList.SelectionChanged += (_, _) => OnAudioTrackSelectionChanged();
         SubtitleTrackList.SelectionChanged += (_, _) => OnSubtitleTrackSelectionChanged();
-        AudioTrackSelector.DropDownOpened += (_, _) => UpdateControlVisibility();
-        AudioTrackSelector.DropDownClosed += (_, _) => UpdateControlVisibility();
+        AudioTrackPickerPopup.Closed += (_, _) => UpdateControlVisibility();
         SubtitlePickerPopup.Closed += (_, _) =>
         {
             _bottomHoverActive = BottomBar.IsPointerOver;
@@ -275,9 +277,11 @@ public sealed partial class MainWindow : Window
             Player.UnobserveProperty(ChapterListObservationId);
             Player.UnobserveProperty(ChapterObservationId);
             _captureNotificationTimer.Stop();
+            _captureThumbnail?.Dispose();
+            _captureThumbnail = null;
             _subtitleSyncNotificationTimer.Stop();
             _cursorHideTimer.Stop();
-            _bottomSeekVisibilityTimer.Stop();
+            _bottomActivityVisibilityTimer.Stop();
             _panelFadeTimer.Stop();
             await _previewTask;
             await _captureTask;
@@ -313,8 +317,7 @@ public sealed partial class MainWindow : Window
         Player.SetProperty("hwdec", _preferences.HardwareAcceleration ? "auto" : "no");
         ApplyVideoDisplayPreferences();
         ApplySubtitleCodepage();
-        Player.SetProperty("sub-font-size", (long)_preferences.SubtitleFontSize);
-        Player.SetProperty("sub-margin-y", (long)_preferences.SubtitleMargin);
+        ApplySubtitleAppearancePreferences();
         Player.SetProperty("sub-visibility", _preferences.SubtitlesVisible);
         Player.SetProperty("volume", (long)_preferences.Volume);
         Player.SetProperty("mute", _isMuted);
@@ -326,6 +329,23 @@ public sealed partial class MainWindow : Window
             AutoFindSubtitlesCheckBox.IsChecked = _preferences.AutoFindSubtitles;
         foreach (var (menuItem, isHeader) in _autoHideMenuItems)
             menuItem.IsChecked = isHeader ? _preferences.AutoHideHeader : _preferences.AutoHideBottom;
+    }
+
+    private void ApplySubtitleAppearancePreferences()
+    {
+        Player.SetPropertyString("sub-font", SubtitleAppearanceRules.NormalizeFontFamily(_preferences.SubtitleFontFamily));
+        Player.SetProperty("sub-font-size", (long)_preferences.SubtitleFontSize);
+        Player.SetProperty("sub-bold", _preferences.SubtitleBold);
+        Player.SetProperty("sub-italic", _preferences.SubtitleItalic);
+        Player.SetPropertyString("sub-color", SubtitleAppearanceRules.NormalizeTextColor(_preferences.SubtitleTextColor));
+        Player.SetProperty("sub-border-style", _preferences.SubtitleBackgroundEnabled ? "background-box" : "outline-and-shadow");
+        Player.SetProperty("sub-back-color", $"#{(int)Math.Round(_preferences.SubtitleBackgroundOpacity * 255.0 / 100):X2}000000");
+        Player.SetProperty("sub-outline-size", _preferences.SubtitleOutlineSize);
+        Player.SetProperty("sub-shadow-offset", _preferences.SubtitleShadowOffset);
+        Player.SetProperty("sub-pos", (long)_preferences.SubtitlePosition);
+        Player.SetProperty("sub-align-x", SubtitleAppearanceRules.NormalizeHorizontalAlignment(_preferences.SubtitleHorizontalAlignment));
+        Player.SetProperty("sub-margin-y", (long)_preferences.SubtitleMargin);
+        Player.SetProperty("sub-ass-override", "force");
     }
 
     private void ApplySubtitleCodepage()
@@ -830,7 +850,7 @@ public sealed partial class MainWindow : Window
         _pendingResume = null;
         _pendingResumeStartPositionSeconds = null;
         _pendingResumeTargetPositionSeconds = null;
-        ShowBottomAfterSeek();
+        ShowBottomTemporarily();
         Player.SetProperty("pause", true);
         _isPlaying = false;
         UpdatePlaybackButton();
@@ -858,8 +878,8 @@ public sealed partial class MainWindow : Window
             targetPosition = Math.Clamp(targetPosition, 0, duration);
         _discreteSeekTarget = targetPosition;
         _lastDiscreteSeek = now;
-        Player.Seek(targetPosition, SeekOption.Absolute | SeekOption.Keyframes).Invoke();
-        ShowBottomAfterSeek();
+        Player.Seek(targetPosition, SeekOption.Absolute | SeekOption.Exact).Invoke();
+        ShowBottomTemporarily();
     }
 
     private void ResetDiscreteSeekBurst()
@@ -868,12 +888,12 @@ public sealed partial class MainWindow : Window
         _lastDiscreteSeek = DateTime.MinValue;
     }
 
-    private void ShowBottomAfterSeek()
+    private void ShowBottomTemporarily()
     {
         if (!_preferences.AutoHideBottom) return;
-        _bottomSeekActive = true;
-        _bottomSeekVisibilityTimer.Stop();
-        _bottomSeekVisibilityTimer.Start();
+        _bottomActivityActive = true;
+        _bottomActivityVisibilityTimer.Stop();
+        _bottomActivityVisibilityTimer.Start();
         UpdateControlVisibility();
     }
 
@@ -881,6 +901,7 @@ public sealed partial class MainWindow : Window
     {
         if (_timelineClosing || _currentVideo is null || !_captureTask.IsCompleted) return Task.CompletedTask;
         if (_isDraggingSeek) EndTimelineDrag();
+        SetCaptureThumbnail(null);
         ShowCaptureNotification(UiText.CapturingFrame, keepVisible: true);
         _captureTask = CaptureFrameCoreAsync(_currentVideo);
         return _captureTask;
@@ -890,15 +911,31 @@ public sealed partial class MainWindow : Window
     {
         try
         {
+            var saveMode = ScreenshotSaveModeRules.Normalize(_preferences.ScreenshotSaveMode);
             var output = MediaPathRules.CreateCapturePath(
                 videoPath,
                 GetCaptureDirectory(),
-                DateTimeOffset.Now);
+                DateTimeOffset.Now,
+                saveMode);
             await _previewTask;
             if (_timelineClosing || !PathsEqual(_currentVideo, videoPath)) return;
             Directory.CreateDirectory(Path.GetDirectoryName(output)!);
-            await VideoSurface.CaptureFrameAsync(output);
-            if (!_timelineClosing) ShowCaptureNotification(UiText.FrameSaved);
+            await VideoSurface.CaptureFrameAsync(output, optimized: saveMode == ScreenshotSaveModeRules.Optimized);
+            if (_timelineClosing) return;
+            var thumbnail = await Task.Run(() =>
+            {
+                using var stream = File.OpenRead(output);
+                return Bitmap.DecodeToWidth(stream, 160);
+            });
+            if (_timelineClosing)
+            {
+                thumbnail.Dispose();
+                return;
+            }
+            SetCaptureThumbnail(thumbnail);
+            ShowCaptureNotification(UiText.FrameSaved);
+            CaptureNotificationIndicator.IsVisible = false;
+            CaptureNotificationText.IsVisible = false;
         }
         catch (Exception exception)
         {
@@ -911,9 +948,19 @@ public sealed partial class MainWindow : Window
     private void ShowCaptureNotification(string message, bool keepVisible = false)
     {
         CaptureNotificationText.Text = message;
+        CaptureNotificationIndicator.IsVisible = true;
+        CaptureNotificationText.IsVisible = true;
         CaptureNotification.IsVisible = true;
         _captureNotificationTimer.Stop();
         if (!keepVisible) _captureNotificationTimer.Start();
+    }
+
+    private void SetCaptureThumbnail(Bitmap? thumbnail)
+    {
+        _captureThumbnail?.Dispose();
+        _captureThumbnail = thumbnail;
+        CaptureThumbnail.Source = thumbnail;
+        CaptureThumbnailBorder.IsVisible = thumbnail is not null;
     }
 
     private void ShowStatusNotification(string message)
@@ -1204,11 +1251,10 @@ public sealed partial class MainWindow : Window
         _updatingTrackSelectors = true;
         try
         {
-            PopulateTrackSelector(AudioTrackSelector, audioTracks, UiText.Muted);
+            PopulateAudioTrackList(audioTracks);
             PopulateSubtitleTrackList(subtitleTracks);
-            AudioTrackOptionsPanel.IsVisible = audioTracks.Count > 1;
-            AudioTrackSelector.IsEnabled = audioTracks.Count > 1;
-            TrackSelectionPanel.IsVisible = AudioTrackOptionsPanel.IsVisible;
+            AudioTrackButton.IsVisible = audioTracks.Count > 1;
+            if (AudioTrackPickerPopup.IsOpen) AudioTrackPickerPopup.IsOpen = audioTracks.Count > 1;
             if (SubtitlePickerPopup.IsOpen) RefreshSubtitlePickerContent();
         }
         finally
@@ -1379,19 +1425,19 @@ public sealed partial class MainWindow : Window
         return string.Join(" · ", labelParts);
     }
 
-    private static void PopulateTrackSelector(ComboBox selector, IReadOnlyList<MediaTrackOption> tracks, string offLabel)
+    private void PopulateAudioTrackList(IReadOnlyList<MediaTrackOption> tracks)
     {
-        selector.Items.Clear();
-        var offItem = new ComboBoxItem { Content = offLabel };
-        selector.Items.Add(offItem);
-        ComboBoxItem? selectedItem = tracks.Any(track => track.IsSelected) ? null : offItem;
+        AudioTrackList.Items.Clear();
+        var offItem = new ListBoxItem { Content = UiText.Muted };
+        AudioTrackList.Items.Add(offItem);
+        ListBoxItem? selectedItem = tracks.Any(track => track.IsSelected) ? null : offItem;
         foreach (var track in tracks)
         {
-            var item = new ComboBoxItem { Content = track.Label, Tag = track };
-            selector.Items.Add(item);
+            var item = new ListBoxItem { Content = track.Label, Tag = track };
+            AudioTrackList.Items.Add(item);
             if (track.IsSelected) selectedItem = item;
         }
-        selector.SelectedItem = selectedItem;
+        AudioTrackList.SelectedItem = selectedItem;
     }
 
     private void PopulateSubtitleTrackList(IReadOnlyList<MediaTrackOption> tracks)
@@ -1441,7 +1487,7 @@ public sealed partial class MainWindow : Window
 
     private void OnAudioTrackSelectionChanged()
     {
-        if (_updatingTrackSelectors || AudioTrackSelector.SelectedItem is not ComboBoxItem item) return;
+        if (_updatingTrackSelectors || AudioTrackList.SelectedItem is not ListBoxItem item) return;
         CancelSubtitleAutomation();
         _subtitleAutomationStarted = false;
         try
@@ -1467,6 +1513,8 @@ public sealed partial class MainWindow : Window
                 };
             }
             SavePreferences(_preferences);
+            AudioTrackPickerPopup.IsOpen = false;
+            UpdateControlVisibility();
         }
         catch (MpvException exception) { AppLogger.Error("Audio track selection failed", exception); }
     }
@@ -1542,16 +1590,10 @@ public sealed partial class MainWindow : Window
         UpdateControlVisibility();
     }
 
-    private static void SetSelectorSelection(ComboBox selector, int? trackId)
+    private void ToggleAudioTrackPicker()
     {
-        foreach (var obj in selector.Items)
-        {
-            if (obj is ComboBoxItem cbi)
-            {
-                if (trackId is null && cbi.Tag is null) { selector.SelectedItem = cbi; return; }
-                if (cbi.Tag is MediaTrackOption opt && opt.Id == trackId) { selector.SelectedItem = cbi; return; }
-            }
-        }
+        AudioTrackPickerPopup.IsOpen = _currentVideo is not null && !AudioTrackPickerPopup.IsOpen;
+        UpdateControlVisibility();
     }
 
     private static void SetListBoxSelection(ListBox listBox, int? trackId)
@@ -2258,9 +2300,9 @@ public sealed partial class MainWindow : Window
         var pointerOverVideo = pointerWithinWindow && IsPointerInside(VideoFrame, pointerX, pointerY);
         var headerActive = _preferences.AutoHideHeader
             && (headerContextMenuOpen || pointerWithinWindow && (headerHovered || pointerY <= HeaderRevealZoneHeight));
-        var isTrackSelectorOpen = AudioTrackSelector.IsDropDownOpen;
+        var audioTrackPickerOpen = AudioTrackPickerPopup.IsOpen;
         var bottomActive = _preferences.AutoHideBottom
-            && (bottomContextMenuOpen || SubtitlePickerPopup.IsOpen || isTrackSelectorOpen || pointerWithinWindow
+            && (bottomContextMenuOpen || SubtitlePickerPopup.IsOpen || audioTrackPickerOpen || pointerWithinWindow
                 && (bottomHovered || pointerY >= RootPanel.Bounds.Height - BottomRevealZoneHeight));
         var queueActive = !_queuePanelPinned
             && _queuedVideos.Count > 0
@@ -2359,9 +2401,8 @@ public sealed partial class MainWindow : Window
         var autoHideHeader = _preferences.AutoHideHeader;
         var autoHideBottom = _preferences.AutoHideBottom;
         var showHeader = !autoHideHeader || _headerHoverActive;
-        var isTrackSelectorOpen = AudioTrackSelector.IsDropDownOpen;
-        var showBottom = _isDraggingSeek || !autoHideBottom || _bottomHoverActive || _bottomSeekActive
-            || SubtitlePickerPopup.IsOpen || isTrackSelectorOpen;
+        var showBottom = _isDraggingSeek || !autoHideBottom || _bottomHoverActive || _bottomActivityActive
+            || SubtitlePickerPopup.IsOpen || AudioTrackPickerPopup.IsOpen;
 
         RootPanel.RowDefinitions[0].Height = autoHideHeader ? new GridLength(0) : new GridLength(48);
         RootPanel.RowDefinitions[2].Height = autoHideBottom ? new GridLength(0) : GridLength.Auto;
@@ -2372,9 +2413,10 @@ public sealed partial class MainWindow : Window
         BottomBar.SetValue(Grid.RowProperty, autoHideBottom ? 1 : 2);
         TransitionPanelVisibility(HeaderBar, showHeader, autoHideHeader);
         TransitionPanelVisibility(BottomBar, showBottom, autoHideBottom);
-        RootPanel.Margin = isFullscreen ? new Thickness(0) : new Thickness(9);
+        RootPanel.Margin = new Thickness(0);
         VideoFrame.Margin = !autoHideHeader && !isFullscreen ? new Thickness(0, 8, 0, 0) : new Thickness(0);
         VideoFrame.CornerRadius = isFullscreen ? new CornerRadius(0) : new CornerRadius(18);
+        VideoFrame.BorderThickness = isFullscreen ? new Thickness(0) : new Thickness(1);
     }
 
     private bool HandleShortcut(ShortcutGesture gesture)
@@ -2442,8 +2484,14 @@ public sealed partial class MainWindow : Window
             case ShortcutDefaults.ToggleFullscreen: ToggleFullscreen(); break;
             case ShortcutDefaults.ToggleSubtitles: ToggleSubtitles(); break;
             case ShortcutDefaults.AddSubtitle: _ = OpenSubtitleAsync(); break;
-            case ShortcutDefaults.VolumeDown: SetVolume(_preferences.Volume - PlayerPreferences.VolumeAdjustmentStep); break;
-            case ShortcutDefaults.VolumeUp: SetVolume(_preferences.Volume + PlayerPreferences.VolumeAdjustmentStep); break;
+            case ShortcutDefaults.VolumeDown:
+                SetVolume(_preferences.Volume - PlayerPreferences.VolumeAdjustmentStep);
+                ShowBottomTemporarily();
+                break;
+            case ShortcutDefaults.VolumeUp:
+                SetVolume(_preferences.Volume + PlayerPreferences.VolumeAdjustmentStep);
+                ShowBottomTemporarily();
+                break;
             case ShortcutDefaults.SubtitleDelayEarlier: AdjustSubtitleDelay(-1); break;
             case ShortcutDefaults.SubtitleDelayLater: AdjustSubtitleDelay(1); break;
             case ShortcutDefaults.SubtitleDelayReset: ResetSubtitleDelay(); break;

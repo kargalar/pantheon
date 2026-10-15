@@ -197,6 +197,10 @@ public static class UiText
     public const string RightRegion = "Right region";
     public const string Russian = "Russian";
     public const string SaveFolder = "Save folder";
+    public const string ScreenshotSaveMode = "Image format";
+    public const string ScreenshotOriginalMode = "Original (PNG, lossless)";
+    public const string ScreenshotOptimizedMode = "Optimized (JPEG, high quality)";
+    public const string ScreenshotSaveModeHelp = "Original saves every pixel without loss. Optimized uses high-quality JPEG compression for smaller files with minimal visible loss.";
     public const string SavePlaybackQueue = "Save playback queue";
     public const string SaveQueue = "Save queue";
     public const string SaveTheCurrentVideoAndQueueAsAn = "Save the current video and queue as an M3U playlist";
