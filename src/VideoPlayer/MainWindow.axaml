@@ -23,7 +23,7 @@
       </Grid>
     </Border>
 
-    <Border x:Name="VideoFrame" Grid.Row="1" Grid.Column="0" Margin="0,8,0,0" CornerRadius="18" Background="#090909" BorderBrush="#272727" BorderThickness="1" ClipToBounds="True">
+    <Border x:Name="VideoFrame" Grid.Row="1" Grid.Column="0" Margin="0,8,0,0" CornerRadius="0" Background="#090909" BorderThickness="0" ClipToBounds="True">
       <Grid>
         <local:ToneMappedVideoView x:Name="VideoSurface" />
         <StackPanel x:Name="DropHint" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" IsHitTestVisible="False">
@@ -46,6 +46,14 @@
             </Border>
             <Ellipse x:Name="CaptureNotificationIndicator" Width="8" Height="8" Fill="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
             <TextBlock x:Name="CaptureNotificationText" Text="{x:Static core:UiText.CapturingFrame}" FontSize="12" Foreground="#F2F2F2" VerticalAlignment="Center" />
+          </StackPanel>
+        </Border>
+        <Border x:Name="VolumeNotification" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,24,24,0"
+                IsVisible="False" IsHitTestVisible="False"
+                Background="#E51B1B1B" BorderBrush="#3A3A3A" BorderThickness="1" CornerRadius="12" Padding="14,10">
+          <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+            <TextBlock x:Name="VolumeNotificationIcon" Text="🔊" FontSize="15" VerticalAlignment="Center" />
+            <TextBlock x:Name="VolumeNotificationText" Text="100%" FontSize="13" FontWeight="SemiBold" Foreground="#F2F2F2" VerticalAlignment="Center" />
           </StackPanel>
         </Border>
         <Border x:Name="StatusNotification" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,24,0,0"

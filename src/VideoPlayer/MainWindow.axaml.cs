@@ -39,6 +39,7 @@ public sealed partial class MainWindow : Window
     private static readonly TimeSpan QueuePersistenceDebounce = TimeSpan.FromMilliseconds(400);
     private static readonly TimeSpan DiscreteSeekBurstDuration = TimeSpan.FromMilliseconds(750);
     private static readonly TimeSpan SubtitleSyncNotificationDuration = TimeSpan.FromSeconds(2.5);
+    private static readonly TimeSpan VolumeNotificationDuration = TimeSpan.FromSeconds(1.5);
 
     private readonly DispatcherTimer _progressTimer;
     private readonly DispatcherTimer _preferencesUpdateTimer;
@@ -46,6 +47,7 @@ public sealed partial class MainWindow : Window
     private readonly DispatcherTimer _captureNotificationTimer;
     private readonly DispatcherTimer _subtitleSyncNotificationTimer;
     private readonly DispatcherTimer _statusNotificationTimer = new() { Interval = TimeSpan.FromSeconds(3.5) };
+    private readonly DispatcherTimer _volumeNotificationTimer = new() { Interval = VolumeNotificationDuration };
     private readonly DispatcherTimer _cursorHideTimer = new() { Interval = CursorHideDelay };
     private readonly DispatcherTimer _bottomActivityVisibilityTimer = new() { Interval = BottomActivityVisibilityDuration };
     private readonly DispatcherTimer _panelFadeTimer = new() { Interval = TimeSpan.FromMilliseconds(16) };
@@ -196,6 +198,11 @@ public sealed partial class MainWindow : Window
             _statusNotificationTimer.Stop();
             StatusNotification.IsVisible = false;
         };
+        _volumeNotificationTimer.Tick += (_, _) =>
+        {
+            _volumeNotificationTimer.Stop();
+            VolumeNotification.IsVisible = false;
+        };
         _cursorHideTimer.Tick += (_, _) => HideCursor();
         _bottomActivityVisibilityTimer.Tick += (_, _) =>
         {
@@ -277,6 +284,7 @@ public sealed partial class MainWindow : Window
             Player.UnobserveProperty(ChapterListObservationId);
             Player.UnobserveProperty(ChapterObservationId);
             _captureNotificationTimer.Stop();
+            _volumeNotificationTimer.Stop();
             _captureThumbnail?.Dispose();
             _captureThumbnail = null;
             _subtitleSyncNotificationTimer.Stop();
@@ -879,7 +887,7 @@ public sealed partial class MainWindow : Window
         _discreteSeekTarget = targetPosition;
         _lastDiscreteSeek = now;
         Player.Seek(targetPosition, SeekOption.Absolute | SeekOption.Exact).Invoke();
-        ShowBottomTemporarily();
+        ShowSeekNotification(targetPosition - currentPosition);
     }
 
     private void ResetDiscreteSeekBurst()
@@ -977,6 +985,7 @@ public sealed partial class MainWindow : Window
     private void SetVolume(int volume)
     {
         volume = Math.Clamp(volume, 0, PlayerPreferences.MaximumVolume);
+        var volumeChanged = _preferences.Volume != volume;
         _preferences = _preferences with { Volume = volume };
         _isMuted = volume == 0;
         _preferences = _preferences with { Muted = _isMuted };
@@ -985,6 +994,34 @@ public sealed partial class MainWindow : Window
         Player.SetProperty("volume", (long)volume);
         Player.SetProperty("mute", volume == 0);
         SavePreferences(_preferences);
+        if (volumeChanged && _currentVideo is not null)
+            ShowVolumeNotification();
+    }
+
+    private void ShowVolumeNotification()
+    {
+        ShowTransientNotification(_isMuted ? "🔇" : "🔊", _isMuted ? UiText.Muted : $"{_preferences.Volume}%");
+    }
+
+    private void ShowSeekNotification(double offsetSeconds)
+    {
+        if (Math.Abs(offsetSeconds) < 0.5) return;
+
+        var roundedOffset = (int)Math.Round(Math.Abs(offsetSeconds), MidpointRounding.AwayFromZero);
+        var magnitude = roundedOffset < 60
+            ? $"{roundedOffset}s"
+            : MediaTimeFormatter.FormatPreviewTime(roundedOffset);
+        var direction = offsetSeconds > 0 ? "+" : "−";
+        ShowTransientNotification("↪", $"{direction}{magnitude}");
+    }
+
+    private void ShowTransientNotification(string icon, string text)
+    {
+        VolumeNotificationText.Text = text;
+        VolumeNotificationIcon.Text = icon;
+        VolumeNotification.IsVisible = true;
+        _volumeNotificationTimer.Stop();
+        _volumeNotificationTimer.Start();
     }
 
     private void ToggleMute()
@@ -994,6 +1031,8 @@ public sealed partial class MainWindow : Window
         Player.SetProperty("mute", _isMuted);
         VolumeLabel.Text = _isMuted ? UiText.Muted : $"{_preferences.Volume}%";
         SavePreferences(_preferences);
+        if (_currentVideo is not null)
+            ShowVolumeNotification();
     }
 
     private void OnVolumeSliderWheel(object? sender, PointerWheelEventArgs e)
@@ -2415,8 +2454,8 @@ public sealed partial class MainWindow : Window
         TransitionPanelVisibility(BottomBar, showBottom, autoHideBottom);
         RootPanel.Margin = new Thickness(0);
         VideoFrame.Margin = !autoHideHeader && !isFullscreen ? new Thickness(0, 8, 0, 0) : new Thickness(0);
-        VideoFrame.CornerRadius = isFullscreen ? new CornerRadius(0) : new CornerRadius(18);
-        VideoFrame.BorderThickness = isFullscreen ? new Thickness(0) : new Thickness(1);
+        VideoFrame.CornerRadius = new CornerRadius(0);
+        VideoFrame.BorderThickness = new Thickness(0);
     }
 
     private bool HandleShortcut(ShortcutGesture gesture)
@@ -2486,11 +2525,9 @@ public sealed partial class MainWindow : Window
             case ShortcutDefaults.AddSubtitle: _ = OpenSubtitleAsync(); break;
             case ShortcutDefaults.VolumeDown:
                 SetVolume(_preferences.Volume - PlayerPreferences.VolumeAdjustmentStep);
-                ShowBottomTemporarily();
                 break;
             case ShortcutDefaults.VolumeUp:
                 SetVolume(_preferences.Volume + PlayerPreferences.VolumeAdjustmentStep);
-                ShowBottomTemporarily();
                 break;
             case ShortcutDefaults.SubtitleDelayEarlier: AdjustSubtitleDelay(-1); break;
             case ShortcutDefaults.SubtitleDelayLater: AdjustSubtitleDelay(1); break;

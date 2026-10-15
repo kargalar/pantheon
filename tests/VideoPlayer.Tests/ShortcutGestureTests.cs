@@ -77,9 +77,9 @@ public sealed class ShortcutGestureTests
     }
 
     [Theory]
-    [InlineData(Key.Left, ShortcutDefaults.PreviousChapter)]
-    [InlineData(Key.Right, ShortcutDefaults.NextChapter)]
-    public void ChapterShortcutsMatchAvaloniaAndTheSettingsBindings(Key key, string expectedAction)
+    [InlineData(Key.Left, ShortcutDefaults.PreviousFrame)]
+    [InlineData(Key.Right, ShortcutDefaults.NextFrame)]
+    public void CtrlArrowShortcutsStepFrames(Key key, string expectedAction)
     {
         Assert.True(ShortcutGesture.TryFromAvalonia(key, KeyModifiers.Control, out var gesture));
 

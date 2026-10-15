@@ -180,8 +180,8 @@ public static class ShortcutDefaults
         [TogglePlayback] = "Space",
         [SeekBackward] = "Left",
         [SeekForward] = "Right",
-        [PreviousChapter] = "Ctrl+Left",
-        [NextChapter] = "Ctrl+Right",
+        [PreviousChapter] = "Ctrl+PageUp",
+        [NextChapter] = "Ctrl+PageDown",
         [SpeedDown] = "Subtract",
         [SpeedUp] = "Add",
         [SpeedReset] = "Back",
@@ -197,8 +197,8 @@ public static class ShortcutDefaults
         [SubtitleDelayReset] = "Ctrl+Shift+Back",
         [ToggleSettings] = "Tab",
         [ToggleMute] = "M",
-        [PreviousFrame] = "OemComma",
-        [NextFrame] = "OemPeriod",
+        [PreviousFrame] = "Ctrl+Left",
+        [NextFrame] = "Ctrl+Right",
         [CloseWindow] = "Alt+F4;Ctrl+W"
     };
 }
@@ -461,6 +461,12 @@ public sealed class PlayerPreferencesStore(string settingsPath)
         ShortcutDefaults.CaptureFrame => gesture.Equals("S", StringComparison.OrdinalIgnoreCase),
         ShortcutDefaults.ToggleFullscreen => gesture.Equals("F", StringComparison.OrdinalIgnoreCase),
         ShortcutDefaults.ToggleSubtitles => gesture.Equals("T", StringComparison.OrdinalIgnoreCase),
+        ShortcutDefaults.PreviousChapter => gesture.Equals("Ctrl+Left", StringComparison.OrdinalIgnoreCase),
+        ShortcutDefaults.NextChapter => gesture.Equals("Ctrl+Right", StringComparison.OrdinalIgnoreCase),
+        ShortcutDefaults.PreviousFrame => gesture.Equals("OemComma", StringComparison.OrdinalIgnoreCase)
+            || gesture.Equals("Ö", StringComparison.OrdinalIgnoreCase),
+        ShortcutDefaults.NextFrame => gesture.Equals("OemPeriod", StringComparison.OrdinalIgnoreCase)
+            || gesture.Equals("Ç", StringComparison.OrdinalIgnoreCase),
         ShortcutDefaults.SubtitleDelayEarlier => gesture.Equals("Ctrl+Shift+Left", StringComparison.OrdinalIgnoreCase),
         ShortcutDefaults.SubtitleDelayLater => gesture.Equals("Ctrl+Shift+Right", StringComparison.OrdinalIgnoreCase),
         _ => false

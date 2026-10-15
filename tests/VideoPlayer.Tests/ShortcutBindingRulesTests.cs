@@ -22,8 +22,10 @@ public sealed class ShortcutBindingRulesTests
         Assert.Equal(ShortcutDefaults.SubtitleDelayReset, ShortcutBindingRules.FindAction(bindings, "Ctrl+Shift+Backspace"));
         Assert.Equal(ShortcutDefaults.ToggleSubtitles, ShortcutBindingRules.FindAction(bindings, "C"));
         Assert.Equal(ShortcutDefaults.ToggleMute, ShortcutBindingRules.FindAction(bindings, "M"));
-        Assert.Equal(ShortcutDefaults.PreviousChapter, ShortcutBindingRules.FindAction(bindings, "Ctrl+Left"));
-        Assert.Equal(ShortcutDefaults.NextChapter, ShortcutBindingRules.FindAction(bindings, "Ctrl+Right"));
+        Assert.Equal(ShortcutDefaults.PreviousFrame, ShortcutBindingRules.FindAction(bindings, "Ctrl+Left"));
+        Assert.Equal(ShortcutDefaults.NextFrame, ShortcutBindingRules.FindAction(bindings, "Ctrl+Right"));
+        Assert.Equal(ShortcutDefaults.PreviousChapter, ShortcutBindingRules.FindAction(bindings, "Ctrl+PageUp"));
+        Assert.Equal(ShortcutDefaults.NextChapter, ShortcutBindingRules.FindAction(bindings, "Ctrl+PageDown"));
         Assert.Equal(ShortcutDefaults.ToggleFullscreen, ShortcutBindingRules.FindAction(bindings, "Enter"));
         Assert.Equal(ShortcutDefaults.PreviousFrame, ShortcutBindingRules.FindAction(bindings, "Ö"));
         Assert.Equal(ShortcutDefaults.NextFrame, ShortcutBindingRules.FindAction(bindings, "Ç"));
