@@ -203,7 +203,6 @@ public sealed partial class MainWindow : Window
         };
         _panelFadeTimer.Tick += (_, _) => UpdatePanelFades();
 
-        QueueButton.Click += (_, _) => ToggleQueuePanelPin();
         QueuePanelPinButton.Click += (_, _) => ToggleQueuePanelPin();
         OpenPlaylistButton.Click += async (_, _) => await OpenPlaylistAsync();
         SavePlaylistButton.Click += async (_, _) => await SavePlaylistAsync();
@@ -323,6 +322,8 @@ public sealed partial class MainWindow : Window
         UpdateHardwareAccelerationButton();
         UpdateControlVisibility();
         UpdateQueuePanel();
+        if (AutoFindSubtitlesCheckBox is not null && AutoFindSubtitlesCheckBox.IsChecked != _preferences.AutoFindSubtitles)
+            AutoFindSubtitlesCheckBox.IsChecked = _preferences.AutoFindSubtitles;
         foreach (var (menuItem, isHeader) in _autoHideMenuItems)
             menuItem.IsChecked = isHeader ? _preferences.AutoHideHeader : _preferences.AutoHideBottom;
     }
@@ -645,7 +646,10 @@ public sealed partial class MainWindow : Window
         _isPlaying = true;
         UpdatePlaybackPollingInterval();
         _progressTimer.Start();
-        WindowFileLabel.Text = Path.GetFileName(path);
+        var fileName = Path.GetFileName(path);
+        WindowFileLabel.Text = fileName;
+        ToolTip.SetTip(WindowFileLabel, fileName);
+        Title = $"{fileName} - Pantheon";
         if (queueScanCancellation is not null)
             _ = AddSiblingVideosToQueueAsync(path, queueScanGeneration, queueScanCancellation);
         UpdateQueuePanel();
@@ -961,10 +965,28 @@ public sealed partial class MainWindow : Window
     private void SavePreferences(PlayerPreferences preferences)
     {
         if (_preferences == preferences) return;
+        var autoFindChanged = _preferences.AutoFindSubtitles != preferences.AutoFindSubtitles;
         _preferences = preferences;
         _preferencesDirty = true;
         _preferencesUpdateTimer.Stop();
         _preferencesUpdateTimer.Start();
+        if (autoFindChanged)
+        {
+            if (AutoFindSubtitlesCheckBox is not null && AutoFindSubtitlesCheckBox.IsChecked != _preferences.AutoFindSubtitles)
+                AutoFindSubtitlesCheckBox.IsChecked = _preferences.AutoFindSubtitles;
+
+            if (!_preferences.AutoFindSubtitles)
+            {
+                _onlineSubtitleSearchPending = false;
+                CancelSubtitleAutomation();
+            }
+            else if (_preferences.AutoFindSubtitles && _selectedExternalSubtitlePath is null && _selectedSubtitleTrackId is null or not 0)
+            {
+                _onlineSubtitleSearchPending = true;
+                _subtitleAutomationStarted = false;
+                TryStartSubtitleAutomation();
+            }
+        }
     }
 
     private void FlushPreferences()
@@ -1872,7 +1894,6 @@ public sealed partial class MainWindow : Window
 
     private void UpdateQueuePanel()
     {
-        QueueButton.Content = UiText.Format(UiText.QueueCountFormat, _queuedVideos.Count);
         QueuePanelPinButton.Content = _queuePanelPinned ? "●" : "◇";
         var pinAction = _queuePanelPinned ? UiText.UnpinPanel : UiText.PinPanel;
         AutomationProperties.SetName(QueuePanelPinButton, pinAction);

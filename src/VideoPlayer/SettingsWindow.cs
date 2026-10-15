@@ -69,7 +69,7 @@ internal sealed class SettingsWindow : Window
         });
         AddNavigation(UiText.Appearance, "appearance");
         AddNavigation(UiText.Playback, "playback");
-        AddNavigation(UiText.Subtitles, "subtitles");
+        AddNavigation("Altyazı", "subtitles");
         AddNavigation(UiText.Keyboard, "keyboard");
         AddNavigation(UiText.Mouse, "mouse");
         AddNavigation(UiText.Screenshots, "screenshots");
@@ -344,15 +344,15 @@ internal sealed class SettingsWindow : Window
 
     private void BuildSubtitlesPage(StackPanel layout)
     {
-        layout.Children.Add(Description(UiText.SubtitleAutomationHelp));
-        var find = new CheckBox { Content = UiText.AutomaticallyFindAndDownloadOnlineSubtitlesWhenA, IsChecked = _preferences.AutoFindSubtitles };
+        layout.Children.Add(Description("Videolar açıldığında online altyazıları otomatik arayıp indirebilir ve harici altyazıları ses akışıyla senkronize edebilirsiniz."));
+        var find = new CheckBox { Content = "Video açıldığında otomatik olarak online altyazı ara ve indir", IsChecked = _preferences.AutoFindSubtitles };
         find.Click += (_, _) => UpdatePreferences(_preferences with { AutoFindSubtitles = find.IsChecked == true }, false);
         layout.Children.Add(find);
-        var sync = new CheckBox { Content = UiText.AutomaticallySynchronizeExternalSubtitles, IsChecked = _preferences.AutoSynchronizeSubtitles };
+        var sync = new CheckBox { Content = "Harici altyazıları ses ile otomatik senkronize et (FFsubsync)", IsChecked = _preferences.AutoSynchronizeSubtitles };
         sync.Click += (_, _) => UpdatePreferences(_preferences with { AutoSynchronizeSubtitles = sync.IsChecked == true }, false);
         layout.Children.Add(sync);
-        layout.Children.Add(Description(UiText.OnlineSubtitleSearchHelp));
-        layout.Children.Add(SectionTitle(UiText.SearchLanguage));
+        layout.Children.Add(Description("Açık olduğunda: Video açılınca OpenSubtitles üzerinden altyazı aranır, indirilir ve otomatik kullanılır. Kapalı olduğunda: Video açılınca arama başlatılmaz."));
+        layout.Children.Add(SectionTitle("Arama Dili"));
         var language = CreateVideoDisplaySelector(SubtitleAutomationOptions.Languages, _preferences.SubtitleSearchLanguage);
         language.SelectionChanged += (_, _) =>
         {
@@ -361,14 +361,14 @@ internal sealed class SettingsWindow : Window
         };
         AutomationProperties.SetName(language, UiText.SubtitleSearchLanguage);
         layout.Children.Add(language);
-        layout.Children.Add(SectionTitle(UiText.OpenSubtitlesAPIKey));
-        var key = new TextBox { Text = _preferences.OpenSubtitlesApiKey, PasswordChar = '●', PlaceholderText = UiText.APIKey, MaxWidth = 500 };
+        layout.Children.Add(SectionTitle("OpenSubtitles API Anahtarı"));
+        var key = new TextBox { Text = _preferences.OpenSubtitlesApiKey, PasswordChar = '●', PlaceholderText = "API Anahtarı", MaxWidth = 500 };
         key.TextChanged += (_, _) => UpdatePreferences(_preferences with { OpenSubtitlesApiKey = key.Text?.Trim() ?? "" }, false);
         AutomationProperties.SetName(key, UiText.OpenSubtitlesAPIKey);
         layout.Children.Add(key);
-        layout.Children.Add(Description(UiText.OpenSubtitlesApiKeyHelp));
-        layout.Children.Add(SectionTitle(UiText.SynchronizationTool));
-        var executable = new TextBox { Text = _preferences.SubtitleSynchronizerPath, PlaceholderText = UiText.PathToFfsubsyncOrFfsubsyncExe, MaxWidth = 500 };
+        layout.Children.Add(Description("opensubtitles.com hesabınızın API Consumers bölümünden bir anahtar oluşturun veya PANTHEON_OPENSUBTITLES_API_KEY ortam değişkenini kullanın."));
+        layout.Children.Add(SectionTitle("Senkronizasyon Aracı"));
+        var executable = new TextBox { Text = _preferences.SubtitleSynchronizerPath, PlaceholderText = "ffsubsync veya ffsubsync.exe yolu", MaxWidth = 500 };
         executable.TextChanged += (_, _) => UpdatePreferences(_preferences with
         {
             SubtitleSynchronizerPath = string.IsNullOrWhiteSpace(executable.Text)
@@ -376,7 +376,7 @@ internal sealed class SettingsWindow : Window
         }, false);
         AutomationProperties.SetName(executable, UiText.FFsubsyncExecutablePath);
         layout.Children.Add(executable);
-        layout.Children.Add(Description(UiText.SubtitleToolsSetupHelp));
+        layout.Children.Add(Description("Sisteminizde FFsubsync kuruluysa doğrudan 'ffsubsync' yazabilir veya tam çalıştırılabilir dosya yolunu belirtebilirsiniz."));
     }
 
     private static ComboBox CreateVideoDisplaySelector(

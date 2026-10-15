@@ -19,6 +19,13 @@ public sealed partial class MainWindow
     private void InitializeSubtitleAutomation()
     {
         CloseSubtitlePopupButton.Click += (_, _) => SubtitlePickerPopup.IsOpen = false;
+        AutoFindSubtitlesCheckBox.IsChecked = _preferences.AutoFindSubtitles;
+        AutoFindSubtitlesCheckBox.IsCheckedChanged += (_, _) =>
+        {
+            var isChecked = AutoFindSubtitlesCheckBox.IsChecked == true;
+            if (_preferences.AutoFindSubtitles != isChecked)
+                SavePreferences(_preferences with { AutoFindSubtitles = isChecked });
+        };
         FindSubtitleButton.Click += (_, _) =>
         {
             SubtitleSearchQueryBox.Text = "";
@@ -65,6 +72,7 @@ public sealed partial class MainWindow
     {
         if (_subtitleAutomationStarted || !_subtitleMediaReady || !_hasAppliedTrackPreferences || _pendingResume is not null) return;
         _subtitleAutomationStarted = true;
+        if (!_onlineSubtitleSearchPending && (!_preferences.AutoSynchronizeSubtitles || _selectedExternalSubtitlePath is null)) return;
         _ = RunSubtitleAutomationAsync(findOnline: _onlineSubtitleSearchPending, synchronize: _preferences.AutoSynchronizeSubtitles);
     }
 
@@ -90,21 +98,39 @@ public sealed partial class MainWindow
             if (findOnline && (isManual || !_subtitleCache.IsDownloadedSubtitleForVideo(
                 subtitlePath, videoPath, preferences.SubtitleSearchLanguage)))
             {
-                var online = await FindOnlineSubtitleForPlaybackAsync(videoPath, preferences, isManual, IsCurrent, token);
-                subtitlePath = online?.Path;
-                if (!IsCurrent() || subtitlePath is null) return;
-                if (!online!.FromCache && FindLoadedSubtitleId(subtitlePath) is { } loadedId)
-                    Player.SubReload(loadedId).Invoke();
-                AddSubtitle(subtitlePath, showInPlayer: isManual || preferences.SubtitlesVisible, isAutomatic: true);
-                if (!PathsEqual(_selectedExternalSubtitlePath, subtitlePath)) return;
-                SaveAutomaticSubtitleSelection();
-                SetSubtitleAutomationStatus(online!.FromCache ? UiText.LoadedAPreviouslyDownloadedOnlineSubtitle
-                    : UiText.SubtitleDownloadedFromOpenSubtitlesAndLoaded);
+                OnlineSubtitleResult? online;
+                try
+                {
+                    online = await FindOnlineSubtitleForPlaybackAsync(videoPath, preferences, isManual, IsCurrent, token);
+                }
+                catch (Exception exception) when (subtitlePath is not null && exception is IOException
+                    or UnauthorizedAccessException or HttpRequestException or System.Text.Json.JsonException
+                    or InvalidOperationException or ArgumentException)
+                {
+                    online = null;
+                }
+                if (!IsCurrent()) return;
+                if (online is not null)
+                {
+                    subtitlePath = online.Path;
+                    if (!online.FromCache && FindLoadedSubtitleId(subtitlePath) is { } loadedId)
+                        Player.SubReload(loadedId).Invoke();
+                    AddSubtitle(subtitlePath, showInPlayer: isManual || preferences.SubtitlesVisible, isAutomatic: true);
+                    if (!PathsEqual(_selectedExternalSubtitlePath, subtitlePath)) return;
+                    SaveAutomaticSubtitleSelection();
+                    SetSubtitleAutomationStatus(online.FromCache ? UiText.LoadedAPreviouslyDownloadedOnlineSubtitle
+                        : UiText.SubtitleDownloadedFromOpenSubtitlesAndLoaded);
+                }
             }
             if (!synchronize) return;
             if (subtitlePath is null)
             {
-                if (isManual) SetSubtitleAutomationStatus(UiText.AddAnExternalSubtitleFromTheCCMenu);
+                if (isManual)
+                {
+                    const string msg = "Senkronize etmek için önce harici bir altyazı seçin veya ekleyin.";
+                    SetSubtitleAutomationStatus(msg);
+                    ShowStatusNotification(msg);
+                }
                 return;
             }
             if (!isManual && _subtitleDelaySeconds != 0)
@@ -162,10 +188,13 @@ public sealed partial class MainWindow
         var audioStream = GetSelectedAudioReferenceStream();
         if (audioStream is null)
         {
-            SetSubtitleAutomationStatus(UiText.SelectAnAudioTrackForSynchronization);
+            const string noAudioMsg = "Senkronizasyon için geçerli bir ses akışı seçin.";
+            SetSubtitleAutomationStatus(noAudioMsg);
+            ShowStatusNotification(noAudioMsg);
             return;
         }
-        SetSubtitleAutomationStatus(UiText.SynchronizingSubtitlesWithAudio);
+        SetSubtitleAutomationStatus("Altyazı ses ile senkronize ediliyor (FFsubsync)...");
+        ShowStatusNotification("Altyazı senkronizasyonu başlatıldı...");
         var encoding = SubtitleCodepageRules.Normalize(preferences.SubtitleCodepage);
         if (encoding == SubtitleCodepageRules.Auto) encoding = "infer";
         else if (encoding == "cp1254") encoding = "windows-1254";
@@ -175,8 +204,11 @@ public sealed partial class MainWindow
         AddSubtitle(result.Path, preferences.SubtitlesVisible, isAutomatic: true);
         if (!PathsEqual(_selectedExternalSubtitlePath, result.Path)) return;
         SaveAutomaticSubtitleSelection();
-        SetSubtitleAutomationStatus(result.FromCache ? UiText.LoadedCachedSynchronizedSubtitles
-            : UiText.Format(UiText.SubtitleSynchronizedFormat, result.OffsetSeconds, result.ScaleFactor));
+        var syncMsg = result.FromCache
+            ? "Önbellekteki senkronize altyazı yüklendi."
+            : $"Altyazı senkronize edildi (Öteleme: {result.OffsetSeconds:+0.00;-0.00;0.00}s).";
+        SetSubtitleAutomationStatus(syncMsg);
+        ShowStatusNotification(syncMsg);
     }
 
     private void SaveAutomaticSubtitleSelection()
@@ -216,6 +248,11 @@ public sealed partial class MainWindow
         _subtitleAutomationStatus = status;
         SubtitleAutomationStatus.Text = status;
         SubtitleAutomationStatus.IsVisible = !string.IsNullOrEmpty(status);
+        if (SubtitleSyncStatus is not null)
+        {
+            SubtitleSyncStatus.Text = status;
+            SubtitleSyncStatus.IsVisible = !string.IsNullOrEmpty(status);
+        }
         UpdateSubtitleDelayTooltip();
     }
 
@@ -229,7 +266,11 @@ public sealed partial class MainWindow
     {
         if (_currentVideo is not { } videoPath) return;
 
+        if (AutoFindSubtitlesCheckBox is not null && AutoFindSubtitlesCheckBox.IsChecked != _preferences.AutoFindSubtitles)
+            AutoFindSubtitlesCheckBox.IsChecked = _preferences.AutoFindSubtitles;
+
         FindSubtitleButton.IsEnabled = true;
+        SynchronizeSubtitleButton.IsEnabled = true;
         var localFiles = MediaPathRules.FindAllSubtitlesBesideVideo(videoPath);
         LocalFolderSubtitleList.Items.Clear();
         foreach (var file in localFiles)

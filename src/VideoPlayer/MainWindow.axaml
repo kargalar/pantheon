@@ -11,13 +11,10 @@
             IsVisible="False" Opacity="0">
       <Grid ColumnDefinitions="*,Auto">
         <Border x:Name="TitleDragRegion" Background="Transparent">
-          <StackPanel Orientation="Horizontal" Spacing="10" Margin="15,0" VerticalAlignment="Center">
-            <TextBlock x:Name="WindowFileLabel" Text="" FontSize="13" FontWeight="SemiBold" Foreground="#F2F2F2"
-                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-          </StackPanel>
+          <TextBlock x:Name="WindowFileLabel" Text="" FontSize="13" FontWeight="SemiBold" Foreground="#F2F2F2"
+                     Margin="15,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
         </Border>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" Margin="0,0,7,0" VerticalAlignment="Center">
-          <Button x:Name="QueueButton" Content="{x:Static core:UiText.Queue0}" Height="36" Margin="0,0,5,0" ToolTip.Tip="{x:Static core:UiText.ManagePlaybackQueue}" />
           <Button x:Name="SettingsButton" Content="⚙" Width="36" Height="36" Padding="0" ToolTip.Tip="{x:Static core:UiText.Settings}" AutomationProperties.Name="{x:Static core:UiText.Settings}" />
           <Button x:Name="MinimizeButton" Content="−" Classes="caption" Width="36" Height="36" Padding="0" ToolTip.Tip="{x:Static core:UiText.Minimize}" AutomationProperties.Name="{x:Static core:UiText.Minimize}" />
           <Button x:Name="MaximizeButton" Content="□" Classes="caption" Width="36" Height="36" Padding="0" ToolTip.Tip="{x:Static core:UiText.Maximize}" AutomationProperties.Name="{x:Static core:UiText.Maximize}" />
@@ -175,6 +172,7 @@
                   <!-- Online Arama -->
                   <StackPanel Spacing="6">
                     <TextBlock Text="Online Altyazı (OpenSubtitles)" FontSize="12" FontWeight="SemiBold" Foreground="#A7A7A7" />
+                    <CheckBox x:Name="AutoFindSubtitlesCheckBox" Content="Video açılınca otomatik ara ve indir" FontSize="11" Margin="2,0" />
                     <Button x:Name="FindSubtitleButton" Content="Otomatik Online Ara" HorizontalAlignment="Stretch" />
 
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
@@ -191,11 +189,18 @@
 
                   <Border Height="1" Background="#2D2D2D" />
 
-                  <!-- Ek Eylemler -->
+                  <!-- Altyazı Senkronizasyonu -->
                   <StackPanel Spacing="6">
-                    <Button x:Name="SynchronizeSubtitleButton" Content="{x:Static core:UiText.SynchronizeAutomatically}" HorizontalAlignment="Stretch" />
-                    <Button x:Name="AddSubtitleButton" Content="{x:Static core:UiText.AddSubtitleFile}" HorizontalAlignment="Stretch" />
+                    <TextBlock Text="Altyazı Senkronizasyonu" FontSize="12" FontWeight="SemiBold" Foreground="#A7A7A7" />
+                    <Button x:Name="SynchronizeSubtitleButton" Content="Otomatik Altyazı Senkronizasyonu" HorizontalAlignment="Stretch" />
+                    <TextBlock x:Name="SubtitleSyncStatus" IsVisible="False" TextWrapping="Wrap"
+                               Foreground="#00BC7D" FontSize="11" Margin="2,0" />
                   </StackPanel>
+
+                  <Border Height="1" Background="#2D2D2D" />
+
+                  <!-- Altyazı Ekle -->
+                  <Button x:Name="AddSubtitleButton" Content="Altyazı Dosyası Ekle..." HorizontalAlignment="Stretch" />
                 </StackPanel>
               </ScrollViewer>
             </Border>
