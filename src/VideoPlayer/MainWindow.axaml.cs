@@ -187,6 +187,7 @@ public sealed partial class MainWindow : Window
         {
             _captureNotificationTimer.Stop();
             CaptureNotification.IsVisible = false;
+            SetCaptureThumbnail(null);
         };
         _subtitleSyncNotificationTimer = new DispatcherTimer { Interval = SubtitleSyncNotificationDuration };
         _subtitleSyncNotificationTimer.Tick += (_, _) =>
@@ -916,8 +917,9 @@ public sealed partial class MainWindow : Window
     {
         if (_timelineClosing || _currentVideo is null || !_captureTask.IsCompleted) return Task.CompletedTask;
         if (_isDraggingSeek) EndTimelineDrag();
+        _captureNotificationTimer.Stop();
+        CaptureNotification.IsVisible = false;
         SetCaptureThumbnail(null);
-        ShowCaptureNotification(UiText.CapturingFrame, keepVisible: true);
         _captureTask = CaptureFrameCoreAsync(_currentVideo);
         return _captureTask;
     }
@@ -946,28 +948,29 @@ public sealed partial class MainWindow : Window
                         return;
                     }
                     SetCaptureThumbnail(thumbnail);
+                    ShowCaptureThumbnailNotification();
                 });
             if (_timelineClosing) return;
-            ShowCaptureNotification(UiText.FrameSaved);
-            CaptureNotificationIndicator.IsVisible = false;
-            CaptureNotificationText.IsVisible = false;
+            ShowCaptureThumbnailNotification();
         }
         catch (Exception exception)
         {
             AppLogger.Error("Screenshot capture failed", exception);
-            if (!_timelineClosing) CaptureNotification.IsVisible = false;
-            if (!_timelineClosing) await ShowMessageAsync(UiText.CouldNotCaptureFrame, exception.Message);
+            if (!_timelineClosing)
+            {
+                CaptureNotification.IsVisible = false;
+                SetCaptureThumbnail(null);
+                await ShowMessageAsync(UiText.CouldNotCaptureFrame, exception.Message);
+            }
         }
     }
 
-    private void ShowCaptureNotification(string message, bool keepVisible = false)
+    private void ShowCaptureThumbnailNotification()
     {
-        CaptureNotificationText.Text = message;
-        CaptureNotificationIndicator.IsVisible = true;
-        CaptureNotificationText.IsVisible = true;
+        if (_captureThumbnail is null) return;
         CaptureNotification.IsVisible = true;
         _captureNotificationTimer.Stop();
-        if (!keepVisible) _captureNotificationTimer.Start();
+        _captureNotificationTimer.Start();
     }
 
     private void SetCaptureThumbnail(Bitmap? thumbnail)
