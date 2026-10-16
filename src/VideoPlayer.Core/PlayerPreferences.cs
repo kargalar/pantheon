@@ -19,7 +19,7 @@ public sealed record PlayerPreferences
 
     public int SubtitleFontSize { get; init; } = 42;
     public int SubtitleMargin { get; init; } = 30;
-    public string SubtitleFontFamily { get; init; } = "sans-serif";
+    public string SubtitleFontFamily { get; init; } = SubtitleAppearanceRules.DefaultFontFamily;
     public bool SubtitleBold { get; init; }
     public bool SubtitleItalic { get; init; }
     public string SubtitleTextColor { get; init; } = "#FFFFFF";
@@ -84,12 +84,41 @@ public static class PlaybackSpeedRules
 
 public static class SubtitleAppearanceRules
 {
+    public const string DefaultFontFamily = "Arial";
     public const string LeftAlignment = "left";
     public const string CenterAlignment = "center";
     public const string RightAlignment = "right";
 
-    public static string NormalizeFontFamily(string? value) => string.IsNullOrWhiteSpace(value)
-        ? "sans-serif" : value.Trim()[..Math.Min(value.Trim().Length, 100)];
+    public static IReadOnlyList<string> FontFamilies { get; } =
+    [
+        "Arial",
+        "Arial Black",
+        "Bahnschrift",
+        "Calibri",
+        "Cambria",
+        "Candara",
+        "Comic Sans MS",
+        "Consolas",
+        "Constantia",
+        "Corbel",
+        "Courier New",
+        "Franklin Gothic Medium",
+        "Georgia",
+        "Impact",
+        "Lucida Sans Unicode",
+        "Microsoft Sans Serif",
+        "Palatino Linotype",
+        "Segoe UI",
+        "Sitka Text",
+        "Sylfaen",
+        "Tahoma",
+        "Times New Roman",
+        "Trebuchet MS",
+        "Verdana"
+    ];
+
+    public static string NormalizeFontFamily(string? value) => FontFamilies.FirstOrDefault(font =>
+        string.Equals(font, value?.Trim(), StringComparison.OrdinalIgnoreCase)) ?? DefaultFontFamily;
 
     public static string NormalizeTextColor(string? value)
     {

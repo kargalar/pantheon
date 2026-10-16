@@ -69,7 +69,7 @@ internal sealed class SettingsWindow : Window
         });
         AddNavigation(UiText.Appearance, "appearance");
         AddNavigation(UiText.Playback, "playback");
-        AddNavigation("Altyazı", "subtitles");
+        AddNavigation(UiText.Subtitles, "subtitles");
         AddNavigation(UiText.Keyboard, "keyboard");
         AddNavigation(UiText.Mouse, "mouse");
         AddNavigation(UiText.Screenshots, "screenshots");
@@ -344,111 +344,95 @@ internal sealed class SettingsWindow : Window
 
     private void BuildSubtitlesPage(StackPanel layout)
     {
-        layout.Children.Add(SectionTitle("Altyazı görünümü"));
-        layout.Children.Add(Description("Yazı tipi, renk, kalınlık ve konumu değiştirin. Değişiklikler açık videoya uygulanır ve kaydedilir."));
-
-        var fontFamily = new TextBox
+        layout.Children.Add(SectionTitle("Subtitle appearance"));
+        layout.Children.Add(Description("Change the font, color, weight, and position. Changes are applied to the current video and saved automatically."));
+        var fontFamily = new ComboBox { HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left, MinWidth = 260, Margin = new Thickness(0, 5, 0, 4) };
+        foreach (var family in SubtitleAppearanceRules.FontFamilies)
         {
-            Text = _preferences.SubtitleFontFamily,
-            PlaceholderText = "sans-serif",
-            MaxWidth = 500
+            var item = new ComboBoxItem { Content = family, Tag = family };
+            fontFamily.Items.Add(item);
+            if (string.Equals(family, _preferences.SubtitleFontFamily, StringComparison.OrdinalIgnoreCase)) fontFamily.SelectedItem = item;
+        }
+        var fontPreview = new TextBlock
+        {
+            Text = "The quick brown fox jumps over the lazy dog. \u0130\u0131 \u015e\u015f \u011e\u011f \u00dc\u00fc \u00d6\u00f6 \u00c7\u00e7",
+            FontFamily = new FontFamily(_preferences.SubtitleFontFamily), FontSize = 22,
+            Foreground = Brush.Parse("#FFFFFF"), TextWrapping = TextWrapping.Wrap, MaxWidth = 520,
+            Margin = new Thickness(0, 8, 0, 0)
         };
-        fontFamily.TextChanged += (_, _) => UpdatePreferences(
-            _preferences with { SubtitleFontFamily = fontFamily.Text ?? string.Empty }, applyAppearance: true);
-        AutomationProperties.SetName(fontFamily, "Altyazı yazı tipi");
-        layout.Children.Add(SectionTitle("Yazı tipi"));
+        fontFamily.SelectionChanged += (_, _) =>
+        {
+            if (fontFamily.SelectedItem is not ComboBoxItem { Tag: string family }) return;
+            fontPreview.FontFamily = new FontFamily(family);
+            UpdatePreferences(_preferences with { SubtitleFontFamily = family }, applyAppearance: true);
+        };
+        AutomationProperties.SetName(fontFamily, "Subtitle font");
+        layout.Children.Add(SectionTitle("Font"));
         layout.Children.Add(fontFamily);
+        layout.Children.Add(SectionTitle("Preview"));
+        layout.Children.Add(new Border { Background = Brush.Parse("#181818"), BorderBrush = Brush.Parse("#2D2D2D"),
+            BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(14), Child = fontPreview });
 
-        var textColor = new TextBox
-        {
-            Text = _preferences.SubtitleTextColor,
-            PlaceholderText = "#FFFFFF",
-            MaxWidth = 180
-        };
-        textColor.TextChanged += (_, _) =>
-        {
-            if (IsHexColor(textColor.Text))
-                UpdatePreferences(_preferences with { SubtitleTextColor = textColor.Text! }, applyAppearance: true);
-        };
-        AutomationProperties.SetName(textColor, "Altyazı yazı rengi (HEX)");
-        layout.Children.Add(SectionTitle("Yazı rengi (HEX)"));
+        var textColor = new TextBox { Text = _preferences.SubtitleTextColor, PlaceholderText = "#FFFFFF", MaxWidth = 180 };
+        textColor.TextChanged += (_, _) => { if (IsHexColor(textColor.Text)) UpdatePreferences(_preferences with { SubtitleTextColor = textColor.Text! }, true); };
+        AutomationProperties.SetName(textColor, "Subtitle text color (HEX)");
+        layout.Children.Add(SectionTitle("Text color (HEX)"));
         layout.Children.Add(textColor);
 
-        var bold = new CheckBox { Content = "Kalın", IsChecked = _preferences.SubtitleBold, Foreground = Brush.Parse("#EAEAEA") };
-        bold.Click += (_, _) => UpdatePreferences(_preferences with { SubtitleBold = bold.IsChecked == true }, applyAppearance: true);
+        var bold = new CheckBox { Content = "Bold", IsChecked = _preferences.SubtitleBold, Foreground = Brush.Parse("#EAEAEA") };
+        bold.Click += (_, _) => UpdatePreferences(_preferences with { SubtitleBold = bold.IsChecked == true }, true);
         layout.Children.Add(bold);
-        var italic = new CheckBox { Content = "İtalik", IsChecked = _preferences.SubtitleItalic, Foreground = Brush.Parse("#EAEAEA") };
-        italic.Click += (_, _) => UpdatePreferences(_preferences with { SubtitleItalic = italic.IsChecked == true }, applyAppearance: true);
+        var italic = new CheckBox { Content = "Italic", IsChecked = _preferences.SubtitleItalic, Foreground = Brush.Parse("#EAEAEA") };
+        italic.Click += (_, _) => UpdatePreferences(_preferences with { SubtitleItalic = italic.IsChecked == true }, true);
         layout.Children.Add(italic);
 
-        var background = new CheckBox
-        {
-            Content = "Altyazı arkasında kutu göster",
-            IsChecked = _preferences.SubtitleBackgroundEnabled,
-            Foreground = Brush.Parse("#EAEAEA")
-        };
-        background.Click += (_, _) => UpdatePreferences(
-            _preferences with { SubtitleBackgroundEnabled = background.IsChecked == true }, applyAppearance: true);
+        var background = new CheckBox { Content = "Show a background behind subtitles", IsChecked = _preferences.SubtitleBackgroundEnabled, Foreground = Brush.Parse("#EAEAEA") };
+        background.Click += (_, _) => UpdatePreferences(_preferences with { SubtitleBackgroundEnabled = background.IsChecked == true }, true);
         layout.Children.Add(background);
-        AddSliderSetting(layout, "Arka plan opaklığı", _preferences.SubtitleBackgroundOpacity, 0, 100,
-            value => UpdatePreferences(_preferences with { SubtitleBackgroundOpacity = (int)value }, applyAppearance: true),
-            value => $"{value:0}%");
-        AddSliderSetting(layout, "Yazı kenarlığı kalınlığı", _preferences.SubtitleOutlineSize, 0, 10,
-            value => UpdatePreferences(_preferences with { SubtitleOutlineSize = Math.Round(value, 1) }, applyAppearance: true),
+        AddSliderSetting(layout, "Background opacity", _preferences.SubtitleBackgroundOpacity, 0, 100,
+            value => UpdatePreferences(_preferences with { SubtitleBackgroundOpacity = (int)value }, true), value => $"{value:0}%");
+        AddSliderSetting(layout, "Text outline thickness", _preferences.SubtitleOutlineSize, 0, 10,
+            value => UpdatePreferences(_preferences with { SubtitleOutlineSize = Math.Round(value, 1) }, true),
             value => value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture));
-        AddSliderSetting(layout, "Gölge mesafesi", _preferences.SubtitleShadowOffset, 0, 20,
-            value => UpdatePreferences(_preferences with { SubtitleShadowOffset = Math.Round(value, 1) }, applyAppearance: true),
+        AddSliderSetting(layout, "Shadow offset", _preferences.SubtitleShadowOffset, 0, 20,
+            value => UpdatePreferences(_preferences with { SubtitleShadowOffset = Math.Round(value, 1) }, true),
             value => value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture));
-
-        AddSliderSetting(layout, "Dikey konum", _preferences.SubtitlePosition, 0, 100,
-            value => UpdatePreferences(_preferences with { SubtitlePosition = (int)value }, applyAppearance: true),
-            value => $"{value:0}%");
-        layout.Children.Add(SectionTitle("Yatay hizalama"));
-        var alignment = CreateVideoDisplaySelector(
-            [("Sol", SubtitleAppearanceRules.LeftAlignment), ("Orta", SubtitleAppearanceRules.CenterAlignment), ("Sağ", SubtitleAppearanceRules.RightAlignment)],
-            _preferences.SubtitleHorizontalAlignment);
-        alignment.SelectionChanged += (_, _) =>
-        {
-            if (alignment.SelectedItem is ComboBoxItem { Tag: string value })
-                UpdatePreferences(_preferences with { SubtitleHorizontalAlignment = value }, applyAppearance: true);
-        };
+        AddSliderSetting(layout, "Vertical position", _preferences.SubtitlePosition, 0, 100,
+            value => UpdatePreferences(_preferences with { SubtitlePosition = (int)value }, true), value => $"{value:0}%");
+        layout.Children.Add(SectionTitle("Horizontal alignment"));
+        var alignment = CreateVideoDisplaySelector([("Left", SubtitleAppearanceRules.LeftAlignment),
+            ("Center", SubtitleAppearanceRules.CenterAlignment), ("Right", SubtitleAppearanceRules.RightAlignment)], _preferences.SubtitleHorizontalAlignment);
+        alignment.SelectionChanged += (_, _) => { if (alignment.SelectedItem is ComboBoxItem { Tag: string value }) UpdatePreferences(_preferences with { SubtitleHorizontalAlignment = value }, true); };
         layout.Children.Add(alignment);
+        layout.Children.Add(Description("ASS/SSA subtitles may contain their own styling. Appearance settings override that styling."));
 
-        layout.Children.Add(Description("ASS/SSA altyazılar kendi biçimlendirmelerini taşıyabilir; görünüm seçenekleri bu biçimleri zorlayarak uygulanır."));
-
-        layout.Children.Add(Description("Videolar açıldığında online altyazıları otomatik arayıp indirebilir ve harici altyazıları ses akışıyla senkronize edebilirsiniz."));
-        var find = new CheckBox { Content = "Video açıldığında otomatik olarak online altyazı ara ve indir", IsChecked = _preferences.AutoFindSubtitles };
+        layout.Children.Add(SectionTitle("Subtitle discovery and synchronization"));
+        layout.Children.Add(Description("Automatically find online subtitles when a video opens and synchronize external subtitles with the audio track."));
+        var find = new CheckBox { Content = "Automatically search for and download online subtitles when a video opens", IsChecked = _preferences.AutoFindSubtitles };
         find.Click += (_, _) => UpdatePreferences(_preferences with { AutoFindSubtitles = find.IsChecked == true }, false);
         layout.Children.Add(find);
-        var sync = new CheckBox { Content = "Harici altyazıları ses ile otomatik senkronize et (FFsubsync)", IsChecked = _preferences.AutoSynchronizeSubtitles };
+        var sync = new CheckBox { Content = "Automatically synchronize external subtitles with audio (FFsubsync)", IsChecked = _preferences.AutoSynchronizeSubtitles };
         sync.Click += (_, _) => UpdatePreferences(_preferences with { AutoSynchronizeSubtitles = sync.IsChecked == true }, false);
         layout.Children.Add(sync);
-        layout.Children.Add(Description("Açık olduğunda: Video açılınca OpenSubtitles üzerinden altyazı aranır, indirilir ve otomatik kullanılır. Kapalı olduğunda: Video açılınca arama başlatılmaz."));
-        layout.Children.Add(SectionTitle("Arama Dili"));
+        layout.Children.Add(Description("When enabled, subtitles are searched and downloaded from OpenSubtitles as videos open. When disabled, no automatic search is started."));
+        layout.Children.Add(SectionTitle("Search language"));
         var language = CreateVideoDisplaySelector(SubtitleAutomationOptions.Languages, _preferences.SubtitleSearchLanguage);
-        language.SelectionChanged += (_, _) =>
-        {
-            if (language.SelectedItem is ComboBoxItem { Tag: string code })
-                UpdatePreferences(_preferences with { SubtitleSearchLanguage = code }, false);
-        };
+        language.SelectionChanged += (_, _) => { if (language.SelectedItem is ComboBoxItem { Tag: string code }) UpdatePreferences(_preferences with { SubtitleSearchLanguage = code }, false); };
         AutomationProperties.SetName(language, UiText.SubtitleSearchLanguage);
         layout.Children.Add(language);
-        layout.Children.Add(SectionTitle("OpenSubtitles API Anahtarı"));
-        var key = new TextBox { Text = _preferences.OpenSubtitlesApiKey, PasswordChar = '●', PlaceholderText = "API Anahtarı", MaxWidth = 500 };
+        layout.Children.Add(SectionTitle("OpenSubtitles API key"));
+        var key = new TextBox { Text = _preferences.OpenSubtitlesApiKey, PasswordChar = '\u25cf', PlaceholderText = "API key", MaxWidth = 500 };
         key.TextChanged += (_, _) => UpdatePreferences(_preferences with { OpenSubtitlesApiKey = key.Text?.Trim() ?? "" }, false);
         AutomationProperties.SetName(key, UiText.OpenSubtitlesAPIKey);
         layout.Children.Add(key);
-        layout.Children.Add(Description("opensubtitles.com hesabınızın API Consumers bölümünden bir anahtar oluşturun veya PANTHEON_OPENSUBTITLES_API_KEY ortam değişkenini kullanın."));
-        layout.Children.Add(SectionTitle("Senkronizasyon Aracı"));
-        var executable = new TextBox { Text = _preferences.SubtitleSynchronizerPath, PlaceholderText = "ffsubsync veya ffsubsync.exe yolu", MaxWidth = 500 };
-        executable.TextChanged += (_, _) => UpdatePreferences(_preferences with
-        {
-            SubtitleSynchronizerPath = string.IsNullOrWhiteSpace(executable.Text)
-                ? SubtitleAutomationOptions.DefaultSynchronizer : executable.Text.Trim()
-        }, false);
+        layout.Children.Add(Description("Create a key in the API Consumers section of your opensubtitles.com account, or use the PANTHEON_OPENSUBTITLES_API_KEY environment variable."));
+        layout.Children.Add(SectionTitle("Synchronization tool"));
+        var executable = new TextBox { Text = _preferences.SubtitleSynchronizerPath, PlaceholderText = "ffsubsync or path to ffsubsync.exe", MaxWidth = 500 };
+        executable.TextChanged += (_, _) => UpdatePreferences(_preferences with { SubtitleSynchronizerPath = string.IsNullOrWhiteSpace(executable.Text)
+            ? SubtitleAutomationOptions.DefaultSynchronizer : executable.Text.Trim() }, false);
         AutomationProperties.SetName(executable, UiText.FFsubsyncExecutablePath);
         layout.Children.Add(executable);
-        layout.Children.Add(Description("Sisteminizde FFsubsync kuruluysa doğrudan 'ffsubsync' yazabilir veya tam çalıştırılabilir dosya yolunu belirtebilirsiniz."));
+        layout.Children.Add(Description("If FFsubsync is installed, enter 'ffsubsync' or provide the full path to the executable."));
     }
 
     private static ComboBox CreateVideoDisplaySelector(

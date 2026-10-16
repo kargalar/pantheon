@@ -239,7 +239,7 @@ public static class UiText
     public const string Stretch = "Stretch";
     public const string SubtitleBottomMargin = "Subtitle bottom margin";
     public const string SubtitleCharacterEncoding = "Subtitle character encoding";
-    public const string SubtitleDiscoveryAndSynchronization = "Subtitle discovery and synchronization";
+    public const string SubtitleDiscoveryAndSynchronization = "Subtitles";
     public const string SubtitleDownloadURLsMustUseHTTPS = "Subtitle download URLs must use HTTPS.";
     public const string SubtitleDownloadedFromOpenSubtitlesAndLoaded = "Subtitle downloaded from OpenSubtitles and loaded.";
     public const string SubtitleFiles = "Subtitle files";

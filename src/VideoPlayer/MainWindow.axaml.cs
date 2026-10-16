@@ -858,13 +858,13 @@ public sealed partial class MainWindow : Window
         _pendingResume = null;
         _pendingResumeStartPositionSeconds = null;
         _pendingResumeTargetPositionSeconds = null;
-        ShowBottomTemporarily();
         Player.SetProperty("pause", true);
         _isPlaying = false;
         UpdatePlaybackButton();
         UpdatePlaybackPollingInterval();
         if (forward) Player.FrameStep().Invoke();
         else Player.FrameBackStep().Invoke();
+        ShowTransientNotification("↪", forward ? "+1 frame" : "−1 frame");
         UpdatePlaybackStatus();
     }
 
@@ -2304,7 +2304,12 @@ public sealed partial class MainWindow : Window
         UpdatePanelHoverState(0, 0, pointerWithinWindow: false);
     }
 
-    private void OnRootPointerActivity(object? sender, PointerEventArgs e) => ResetCursorHideTimer();
+    private void OnRootPointerActivity(object? sender, PointerEventArgs e)
+    {
+        ResetCursorHideTimer();
+        if (e is PointerPressedEventArgs && SubtitlePickerPopup.IsOpen && !SubtitleButton.IsPointerOver)
+            SubtitlePickerPopup.IsOpen = false;
+    }
 
     private void ResetCursorHideTimer()
     {
