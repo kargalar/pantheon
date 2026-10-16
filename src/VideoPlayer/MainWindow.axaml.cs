@@ -2668,7 +2668,11 @@ public sealed partial class MainWindow : Window
         Player.SetProperty("speed", _playbackSpeed);
         UpdateSpeedLabel();
         SavePreferences(_preferences);
+        if (_currentVideo is not null)
+            ShowSpeedNotification();
     }
+
+    private void ShowSpeedNotification() => ShowTransientNotification("⏩", SpeedLabel.Text ?? $"{_playbackSpeed.ToString("0.00", CultureInfo.InvariantCulture)}×");
 
     private void UpdateSpeedLabel() => SpeedLabel.Text = _playbackSpeed.ToString("0.00", CultureInfo.InvariantCulture) + "×";
 }
