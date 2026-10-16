@@ -122,7 +122,7 @@ public sealed partial class MainWindow
 
     private void OnTimelinePressed(object? sender, PointerPressedEventArgs e)
     {
-        if (_currentVideo is null || !e.GetCurrentPoint(SeekSlider).Properties.IsLeftButtonPressed) return;
+        if (e.KeyModifiers != KeyModifiers.None || _currentVideo is null || !e.GetCurrentPoint(SeekSlider).Properties.IsLeftButtonPressed) return;
         ResetDiscreteSeekBurst();
         _seekDuration = Player.GetProperty<double>("duration");
         if (!double.IsFinite(_seekDuration) || _seekDuration <= 0) return;

@@ -111,6 +111,7 @@ public sealed partial class MainWindow : Window
     private bool _queuePanelHoverActive;
     private WindowsKeyboardHook? _keyboardHook;
     private WindowsMouseHook? _mouseHook;
+    private WindowsMonitorBrightness? _monitorBrightness;
     private SettingsWindow? _settingsWindow;
     private IPointer? _queueDragPointer;
     private Point _queueDragStart;
@@ -245,6 +246,8 @@ public sealed partial class MainWindow : Window
         CloseButton.Click += (_, _) => Close();
         VolumeSlider.ValueChanged += (_, e) => SetVolume((int)e.NewValue);
         VolumeSlider.AddHandler(PointerWheelChangedEvent, OnVolumeSliderWheel, RoutingStrategies.Tunnel, handledEventsToo: true);
+        BrightnessSlider.ValueChanged += (_, e) => SetBrightness((int)e.NewValue);
+        BrightnessSlider.AddHandler(PointerWheelChangedEvent, OnBrightnessSliderWheel, RoutingStrategies.Tunnel, handledEventsToo: true);
         InitializeTimeline();
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
@@ -273,6 +276,7 @@ public sealed partial class MainWindow : Window
             SaveCurrentProgress(force: true);
             _keyboardHook?.Dispose();
             _mouseHook?.Dispose();
+            _monitorBrightness?.Dispose();
             _progressTimer.Stop();
             _preferencesUpdateTimer.Stop();
             _queuePersistenceTimer.Stop();
@@ -931,19 +935,19 @@ public sealed partial class MainWindow : Window
             await _previewTask;
             if (_timelineClosing || !PathsEqual(_currentVideo, videoPath)) return;
             Directory.CreateDirectory(Path.GetDirectoryName(output)!);
-            await VideoSurface.CaptureFrameAsync(output, optimized: saveMode == ScreenshotSaveModeRules.Optimized);
+            await VideoSurface.CaptureFrameAsync(
+                output,
+                optimized: saveMode == ScreenshotSaveModeRules.Optimized,
+                onPreviewCaptured: thumbnail =>
+                {
+                    if (_timelineClosing || !PathsEqual(_currentVideo, videoPath))
+                    {
+                        thumbnail.Dispose();
+                        return;
+                    }
+                    SetCaptureThumbnail(thumbnail);
+                });
             if (_timelineClosing) return;
-            var thumbnail = await Task.Run(() =>
-            {
-                using var stream = File.OpenRead(output);
-                return Bitmap.DecodeToWidth(stream, 160);
-            });
-            if (_timelineClosing)
-            {
-                thumbnail.Dispose();
-                return;
-            }
-            SetCaptureThumbnail(thumbnail);
             ShowCaptureNotification(UiText.FrameSaved);
             CaptureNotificationIndicator.IsVisible = false;
             CaptureNotificationText.IsVisible = false;
@@ -1043,6 +1047,50 @@ public sealed partial class MainWindow : Window
         var nextVolume = VolumeWheelRules.Adjust((int)VolumeSlider.Value, e.Delta.Y);
         if (nextVolume == (int)VolumeSlider.Value) return;
         VolumeSlider.Value = nextVolume;
+        e.Handled = true;
+    }
+
+    private void InitializeBrightness()
+    {
+        if (_monitorBrightness is null || !_monitorBrightness.IsSupported)
+        {
+            BrightnessSlider.IsEnabled = false;
+            ToolTip.SetTip(BrightnessSlider, "Fiziksel monitör parlaklığı bu ekranda desteklenmiyor.");
+            return;
+        }
+
+        var currentBrightness = _monitorBrightness.GetCurrentBrightness();
+        if (currentBrightness.HasValue)
+        {
+            BrightnessSlider.Value = currentBrightness.Value;
+            BrightnessLabel.Text = $"{currentBrightness.Value}%";
+        }
+    }
+
+    private void SetBrightness(int brightness)
+    {
+        brightness = Math.Clamp(brightness, BrightnessWheelRules.MinimumBrightness, BrightnessWheelRules.MaximumBrightness);
+        var brightnessChanged = (int)BrightnessSlider.Value != brightness;
+        BrightnessLabel.Text = $"{brightness}%";
+        if (brightnessChanged)
+            BrightnessSlider.Value = brightness;
+
+        _monitorBrightness?.RequestBrightness(brightness);
+
+        if (brightnessChanged && _currentVideo is not null)
+            ShowBrightnessNotification(brightness);
+    }
+
+    private void ShowBrightnessNotification(int brightness)
+    {
+        ShowTransientNotification("🔆", $"{brightness}%");
+    }
+
+    private void OnBrightnessSliderWheel(object? sender, PointerWheelEventArgs e)
+    {
+        var nextBrightness = BrightnessWheelRules.Adjust((int)BrightnessSlider.Value, e.Delta.Y);
+        if (nextBrightness == (int)BrightnessSlider.Value) return;
+        BrightnessSlider.Value = nextBrightness;
         e.Handled = true;
     }
 
@@ -1819,7 +1867,7 @@ public sealed partial class MainWindow : Window
 
     private void OnQueuePointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (!e.GetCurrentPoint(QueueItems).Properties.IsLeftButtonPressed) return;
+        if (e.KeyModifiers != KeyModifiers.None || !e.GetCurrentPoint(QueueItems).Properties.IsLeftButtonPressed) return;
         var index = GetQueueItemIndex(e.Source);
         if (index < 0) return;
         _queueDragPointer = e.Pointer;
@@ -2206,6 +2254,7 @@ public sealed partial class MainWindow : Window
         }
 
         if (!OperatingSystem.IsWindows()) return;
+        UpdateResponsiveLayout();
         try
         {
             var handle = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
@@ -2213,6 +2262,8 @@ public sealed partial class MainWindow : Window
             {
                 _keyboardHook = new WindowsKeyboardHook(handle, HandleShortcut);
                 _mouseHook = new WindowsMouseHook(handle, HandleMouseGesture);
+                _monitorBrightness = new WindowsMonitorBrightness(handle);
+                InitializeBrightness();
             }
         }
         catch (Exception exception)
@@ -2224,42 +2275,91 @@ public sealed partial class MainWindow : Window
 
     private void OnWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
+        if (e.Property == BoundsProperty)
+        {
+            UpdateResponsiveLayout();
+            return;
+        }
+
         if (e.Property != WindowStateProperty) return;
 
         var maximizeAction = WindowState == WindowState.Maximized ? UiText.RestoreWindowSize : UiText.Maximize;
         MaximizeButton.Content = WindowState == WindowState.Maximized ? "❐" : "□";
         AutomationProperties.SetName(MaximizeButton, maximizeAction);
         ToolTip.SetTip(MaximizeButton, maximizeAction);
+    }
 
+    private void UpdateResponsiveLayout()
+    {
+        var width = Bounds.Width;
+        BrightnessControl.IsVisible = width >= 720;
+        VolumeControl.IsVisible = width >= 560;
+        TimeLabel.IsVisible = width >= 440;
+        SpeedLabel.IsVisible = width >= 380;
     }
 
     private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (WindowState == WindowState.FullScreen || !e.GetCurrentPoint(TitleDragRegion).Properties.IsLeftButtonPressed) return;
+        if (e.KeyModifiers != KeyModifiers.None || WindowState == WindowState.FullScreen || !e.GetCurrentPoint(TitleDragRegion).Properties.IsLeftButtonPressed) return;
         BeginMoveDrag(e);
     }
 
-    private void OnResizePointerPressed(object? sender, PointerPressedEventArgs e)
+    private WindowEdge? GetResizeEdge(Point position)
     {
-        if (WindowState != WindowState.Normal || !CanResize) return;
-        var position = e.GetPosition(this);
-        const double edge = 7;
+        if (WindowState != WindowState.Normal || !CanResize) return null;
+        const double edge = 8;
+        const double corner = 16;
         var left = position.X <= edge;
         var right = position.X >= Bounds.Width - edge;
         var top = position.Y <= edge;
         var bottom = position.Y >= Bounds.Height - edge;
-        var resizeEdge = (left, right, top, bottom) switch
+
+        var nearLeft = position.X <= corner;
+        var nearRight = position.X >= Bounds.Width - corner;
+        var nearTop = position.Y <= corner;
+        var nearBottom = position.Y >= Bounds.Height - corner;
+
+        if (nearLeft && nearTop && (left || top)) return WindowEdge.NorthWest;
+        if (nearRight && nearTop && (right || top)) return WindowEdge.NorthEast;
+        if (nearLeft && nearBottom && (left || bottom)) return WindowEdge.SouthWest;
+        if (nearRight && nearBottom && (right || bottom)) return WindowEdge.SouthEast;
+
+        if (left) return WindowEdge.West;
+        if (right) return WindowEdge.East;
+        if (top) return WindowEdge.North;
+        if (bottom) return WindowEdge.South;
+
+        return null;
+    }
+
+    private static Cursor? GetCursorForResizeEdge(WindowEdge? edge) => edge switch
+    {
+        WindowEdge.NorthWest or WindowEdge.SouthEast => new Cursor(StandardCursorType.TopLeftCorner),
+        WindowEdge.NorthEast or WindowEdge.SouthWest => new Cursor(StandardCursorType.TopRightCorner),
+        WindowEdge.West or WindowEdge.East => new Cursor(StandardCursorType.SizeWestEast),
+        WindowEdge.North or WindowEdge.South => new Cursor(StandardCursorType.SizeNorthSouth),
+        _ => null
+    };
+
+    private void UpdateResizeCursor(Point windowPosition)
+    {
+        if (_cursorHidden) return;
+        var edge = GetResizeEdge(windowPosition);
+        var targetCursor = GetCursorForResizeEdge(edge);
+        if (targetCursor is not null)
         {
-            (true, _, true, _) => WindowEdge.NorthWest,
-            (_, true, true, _) => WindowEdge.NorthEast,
-            (true, _, _, true) => WindowEdge.SouthWest,
-            (_, true, _, true) => WindowEdge.SouthEast,
-            (true, _, _, _) => WindowEdge.West,
-            (_, true, _, _) => WindowEdge.East,
-            (_, _, true, _) => WindowEdge.North,
-            (_, _, _, true) => WindowEdge.South,
-            _ => (WindowEdge?)null
-        };
+            Cursor = targetCursor;
+        }
+        else if (Cursor is not null)
+        {
+            Cursor = null;
+        }
+    }
+
+    private void OnResizePointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (e.KeyModifiers != KeyModifiers.None) return;
+        var resizeEdge = GetResizeEdge(e.GetPosition(this));
         if (resizeEdge is null) return;
         BeginResizeDrag(resizeEdge.Value, e);
         e.Handled = true;
@@ -2297,6 +2397,7 @@ public sealed partial class MainWindow : Window
         var position = e.GetPosition(RootPanel);
         var pointerWithinWindow = position.X >= 0 && position.X <= RootPanel.Bounds.Width
             && position.Y >= 0 && position.Y <= RootPanel.Bounds.Height;
+        UpdateResizeCursor(e.GetPosition(this));
         UpdatePanelHoverState(position.X, position.Y, pointerWithinWindow);
     }
 
@@ -2304,6 +2405,7 @@ public sealed partial class MainWindow : Window
     {
         _cursorHideTimer.Stop();
         ShowCursor();
+        Cursor = null;
         UpdatePanelHoverState(0, 0, pointerWithinWindow: false);
     }
 

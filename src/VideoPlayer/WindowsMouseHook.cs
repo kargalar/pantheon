@@ -29,6 +29,8 @@ internal sealed class WindowsMouseHook : IDisposable
     private const int ControlKey = 0x11;
     private const int ShiftKey = 0x10;
     private const int AltKey = 0x12;
+    private const int LeftWinKey = 0x5B;
+    private const int RightWinKey = 0x5C;
 
     private readonly IntPtr _targetWindow;
     private readonly Func<MouseGesture, int, int, bool> _onGesture;
@@ -56,6 +58,10 @@ internal sealed class WindowsMouseHook : IDisposable
             if (code < 0 || !IsRelevantMessage(messageId))
                 return CallNextHookEx(_hookHandle, code, message, data);
 
+            var winPressed = IsWinKeyDown();
+            if (winPressed)
+                return CallNextHookEx(_hookHandle, code, message, data);
+
             var mouseData = Marshal.PtrToStructure<MouseHookData>(data);
             var isButtonClick = messageId is LeftButtonDown or RightButtonDown or MiddleButtonDown;
             var isTargetForeground = GetForegroundWindow() == _targetWindow;
@@ -65,18 +71,14 @@ internal sealed class WindowsMouseHook : IDisposable
             if (pointedRoot != _targetWindow || (!isTargetForeground && !isButtonClick))
                 return CallNextHookEx(_hookHandle, code, message, data);
 
-            var gesture = messageId switch
-            {
-                LeftButtonDown => MouseGesture.LeftClick,
-                RightButtonDown => MouseGesture.RightClick,
-                MiddleButtonDown => MouseGesture.MiddleClick,
-                MouseWheel => WheelGesture(
-                    mouseData.MouseData,
-                    IsKeyDown(ControlKey),
-                    IsKeyDown(ShiftKey),
-                    IsKeyDown(AltKey)),
-                _ => (MouseGesture?)null
-            };
+            var gesture = ResolveGesture(
+                messageId,
+                mouseData.MouseData,
+                IsKeyDown(ControlKey),
+                IsKeyDown(ShiftKey),
+                IsKeyDown(AltKey),
+                winPressed);
+
             if (gesture is not null && _onGesture(gesture.Value, mouseData.Point.X, mouseData.Point.Y))
             {
                 // Let an inactive window receive the physical click so Windows can activate it.
@@ -93,15 +95,49 @@ internal sealed class WindowsMouseHook : IDisposable
         return CallNextHookEx(_hookHandle, code, message, data);
     }
 
-    internal static MouseGesture WheelGesture(uint mouseData, bool altPressed)
-        => WheelGesture(mouseData, controlPressed: false, shiftPressed: false, altPressed: altPressed);
+    internal static MouseGesture? ResolveGesture(
+        int messageId,
+        uint mouseData,
+        bool controlPressed,
+        bool shiftPressed,
+        bool altPressed,
+        bool winPressed = false)
+    {
+        if (winPressed) return null;
+
+        var hasModifier = controlPressed || shiftPressed || altPressed;
+
+        return messageId switch
+        {
+            LeftButtonDown when !hasModifier => MouseGesture.LeftClick,
+            RightButtonDown when !hasModifier => MouseGesture.RightClick,
+            MiddleButtonDown when !hasModifier => MouseGesture.MiddleClick,
+            MouseWheel => WheelGesture(mouseData, controlPressed, shiftPressed, altPressed, winPressed: false),
+            _ => null
+        };
+    }
+
+    internal static MouseGesture? WheelGesture(uint mouseData, bool altPressed)
+        => WheelGesture(mouseData, controlPressed: false, shiftPressed: false, altPressed: altPressed, winPressed: false);
 
     internal static bool IsRelevantMessage(int messageId) =>
         messageId is LeftButtonDown or RightButtonDown or MiddleButtonDown or MouseWheel;
 
-    internal static MouseGesture WheelGesture(uint mouseData, bool controlPressed, bool shiftPressed, bool altPressed)
+    internal static MouseGesture? WheelGesture(
+        uint mouseData,
+        bool controlPressed,
+        bool shiftPressed,
+        bool altPressed,
+        bool winPressed = false)
     {
+        if (winPressed) return null;
+
+        var modifierCount = (controlPressed ? 1 : 0) + (shiftPressed ? 1 : 0) + (altPressed ? 1 : 0);
+        if (modifierCount > 1) return null;
+
         var delta = unchecked((short)(mouseData >> 16));
+        if (delta == 0) return null;
+
         if (controlPressed) return delta > 0 ? MouseGesture.CtrlWheelUp : MouseGesture.CtrlWheelDown;
         if (shiftPressed) return delta > 0 ? MouseGesture.ShiftWheelUp : MouseGesture.ShiftWheelDown;
         if (altPressed) return delta > 0 ? MouseGesture.AltWheelUp : MouseGesture.AltWheelDown;
@@ -109,6 +145,8 @@ internal sealed class WindowsMouseHook : IDisposable
     }
 
     private static bool IsKeyDown(int virtualKey) => (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
+
+    private static bool IsWinKeyDown() => IsKeyDown(LeftWinKey) || IsKeyDown(RightWinKey);
 
     public void Dispose()
     {

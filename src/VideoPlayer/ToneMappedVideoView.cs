@@ -16,7 +16,11 @@ public sealed class ToneMappedVideoView : OpenGlView
     private static readonly TimeSpan CaptureTimeout = TimeSpan.FromSeconds(10);
     private CaptureRequest? _captureRequest;
 
-    public async Task CaptureFrameAsync(string path, bool includeSubtitles = false, bool optimized = false)
+    public async Task CaptureFrameAsync(
+        string path,
+        bool includeSubtitles = false,
+        bool optimized = false,
+        Action<Bitmap>? onPreviewCaptured = null)
     {
         VerifyAccess();
         if (_captureRequest is not null) throw new InvalidOperationException("A frame capture is already pending.");
@@ -53,6 +57,12 @@ public sealed class ToneMappedVideoView : OpenGlView
             RequestNextFrameRendering();
         }
 
+        if (onPreviewCaptured is not null)
+        {
+            var previewThumbnail = CreatePreviewThumbnail(pixels, width, height, 160);
+            onPreviewCaptured(previewThumbnail);
+        }
+
         await Task.Run(() =>
         {
             if (optimized)
@@ -70,6 +80,24 @@ public sealed class ToneMappedVideoView : OpenGlView
             }
             SaveSrgbPng(bitmap, path);
         });
+    }
+
+    private static Bitmap CreatePreviewThumbnail(byte[] pixels, int width, int height, int targetWidth)
+    {
+        var targetHeight = Math.Max(1, (int)Math.Round((double)height * targetWidth / width));
+        var info = new SKImageInfo(width, height, SKColorType.Rgba8888, SKAlphaType.Opaque);
+        using var bitmap = new SKBitmap(info);
+        Marshal.Copy(pixels, 0, bitmap.GetPixels(), pixels.Length);
+
+        var targetInfo = new SKImageInfo(targetWidth, targetHeight, SKColorType.Rgba8888, SKAlphaType.Opaque);
+        using var scaled = bitmap.Resize(targetInfo, SKSamplingOptions.Default)
+            ?? throw new InvalidOperationException("The image resizer could not create a thumbnail.");
+
+        using var encoded = scaled.Encode(SKEncodedImageFormat.Jpeg, 80)
+            ?? throw new InvalidOperationException("The image encoder could not create a JPEG preview.");
+
+        using var stream = encoded.AsStream();
+        return new Bitmap(stream);
     }
 
     private static void SaveHighQualityJpeg(byte[] pixels, int width, int height, string path)

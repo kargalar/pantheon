@@ -36,6 +36,8 @@ public static class UiText
     public const string AutomaticallyFindAndDownloadOnlineSubtitlesWhenA = "Automatically find and download online subtitles when a video opens";
     public const string AutomaticallySynchronizeExternalSubtitles = "Automatically synchronize external subtitles";
     public const string BottomRegion = "Bottom region";
+    public const string Brightness = "Brightness";
+    public const string BrightnessHelp = "Screen brightness (0-100). Scroll over the slider to adjust.";
     public const string Burgundy = "Burgundy";
     public const string CaptureAFrameWithoutSubtitles = "Capture a frame without subtitles";
     public const string CapturingFrame = "Capturing frame";

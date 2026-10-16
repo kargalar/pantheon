@@ -100,7 +100,7 @@ internal sealed class SettingsWindow : Window
         };
         dragRegion.PointerPressed += (_, e) =>
         {
-            if (e.GetCurrentPoint(dragRegion).Properties.IsLeftButtonPressed)
+            if (e.KeyModifiers == KeyModifiers.None && e.GetCurrentPoint(dragRegion).Properties.IsLeftButtonPressed)
                 BeginMoveDrag(e);
         };
         var close = new Button

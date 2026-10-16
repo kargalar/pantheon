@@ -4,7 +4,7 @@
         xmlns:core="clr-namespace:VideoPlayer.Core;assembly=VideoPlayer.Core"
         xmlns:chrome="clr-namespace:Avalonia.Controls.Chrome;assembly=Avalonia.Controls"
         x:Class="VideoPlayer.MainWindow"
-        Title="Pantheon" Icon="/Assets/pantheon.ico" Width="1120" Height="760" MinWidth="920" MinHeight="560"
+        Title="Pantheon" Icon="/Assets/pantheon.ico" Width="1120" Height="760"
         WindowDecorations="None" ExtendClientAreaToDecorationsHint="True" CanResize="True" ShowInTaskbar="True"
         Background="#090909" WindowStartupLocation="CenterScreen">
   <Window.WindowDecorationsTheme>
@@ -126,9 +126,9 @@
     <Grid x:Name="BottomBar" Grid.Row="1" Grid.ColumnSpan="2" RowDefinitions="Auto"
           HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Panel.ZIndex="5" Margin="12,4,12,5"
           IsVisible="False" Opacity="0">
-      <Border Background="#E6191919" BorderBrush="#383838" BorderThickness="1" CornerRadius="16" Padding="14,3,14,4">
+      <Border Background="#E6191919" BorderBrush="#383838" BorderThickness="1" CornerRadius="16" Padding="14,3,14,4" ClipToBounds="True">
         <Grid>
-          <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="6" VerticalAlignment="Center">
+          <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6" VerticalAlignment="Center">
             <Button x:Name="PlayButton" Content="&#x25B6;" Width="36" Height="36" Padding="0" ToolTip.Tip="{x:Static core:UiText.PlayOrPause}" AutomationProperties.Name="{x:Static core:UiText.Play}" Background="{DynamicResource AccentBrush}" BorderBrush="{DynamicResource AccentBrush}" />
             <TextBlock x:Name="TimeLabel" Grid.Column="1" Text="00:00 / 00:00" Foreground="#C4C4C4" FontSize="12" VerticalAlignment="Center" Margin="8,0" />
             <TextBlock x:Name="SpeedLabel" Grid.Column="2" Text="1.00&#215;" Foreground="#A7A7A7" FontSize="12" VerticalAlignment="Center" Margin="4,0" />
@@ -152,13 +152,18 @@
                 </StackPanel>
               </Border>
             </Grid>
-            <Grid Grid.Column="4" ColumnDefinitions="*,Auto" Width="128" VerticalAlignment="Center">
+            <Grid x:Name="BrightnessControl" Grid.Column="4" ColumnDefinitions="Auto,*,Auto" Width="134" VerticalAlignment="Center">
+              <TextBlock Text="🔆" FontSize="13" Foreground="#A7A7A7" VerticalAlignment="Center" Margin="0,0,4,0" ToolTip.Tip="{x:Static core:UiText.Brightness}" />
+              <Slider x:Name="BrightnessSlider" Grid.Column="1" Minimum="0" Maximum="100" Value="100" VerticalAlignment="Center" ToolTip.Tip="{x:Static core:UiText.BrightnessHelp}" AutomationProperties.Name="{x:Static core:UiText.Brightness}" />
+              <TextBlock x:Name="BrightnessLabel" Grid.Column="2" Text="100%" FontSize="11" Foreground="#A7A7A7" VerticalAlignment="Center" Margin="8,0,0,0" />
+            </Grid>
+            <Grid x:Name="VolumeControl" Grid.Column="5" ColumnDefinitions="*,Auto" Width="128" VerticalAlignment="Center">
               <Slider x:Name="VolumeSlider" Grid.Column="0" Minimum="0" Maximum="150" Value="100" VerticalAlignment="Center" ToolTip.Tip="{x:Static core:UiText.Volume0150ScrollOverTheSliderTo}" AutomationProperties.Name="{x:Static core:UiText.Volume}" />
               <TextBlock x:Name="VolumeLabel" Grid.Column="1" Text="100%" FontSize="11" Foreground="#A7A7A7" VerticalAlignment="Center" Margin="8,0,0,0" />
             </Grid>
-            <Button x:Name="AudioTrackButton" Grid.Column="5" Content="🔊" Width="36" Height="36" Padding="0" FontSize="16" ToolTip.Tip="{x:Static core:UiText.SelectAudioTrack}" AutomationProperties.Name="{x:Static core:UiText.AudioTrack}" IsVisible="False" />
-            <Button x:Name="SubtitleButton" Grid.Column="6" Content="CC" Width="36" Height="36" Padding="0" FontSize="12" FontWeight="Bold" ToolTip.Tip="{x:Static core:UiText.ShowOrHideSubtitles}" AutomationProperties.Name="{x:Static core:UiText.ShowSubtitles}" />
-            <Button x:Name="HardwareAccelerationButton" Grid.Column="7" Content="&#x25A6;" Width="36" Height="36" Padding="0" FontSize="17" ToolTip.Tip="{x:Static core:UiText.ToggleHardwareAcceleration}" AutomationProperties.Name="{x:Static core:UiText.EnableHardwareAcceleration}" />
+            <Button x:Name="AudioTrackButton" Grid.Column="6" Content="🔊" Width="36" Height="36" Padding="0" FontSize="16" ToolTip.Tip="{x:Static core:UiText.SelectAudioTrack}" AutomationProperties.Name="{x:Static core:UiText.AudioTrack}" IsVisible="False" />
+            <Button x:Name="SubtitleButton" Grid.Column="7" Content="CC" Width="36" Height="36" Padding="0" FontSize="12" FontWeight="Bold" ToolTip.Tip="{x:Static core:UiText.ShowOrHideSubtitles}" AutomationProperties.Name="{x:Static core:UiText.ShowSubtitles}" />
+            <Button x:Name="HardwareAccelerationButton" Grid.Column="8" Content="&#x25A6;" Width="36" Height="36" Padding="0" FontSize="17" ToolTip.Tip="{x:Static core:UiText.ToggleHardwareAcceleration}" AutomationProperties.Name="{x:Static core:UiText.EnableHardwareAcceleration}" />
           </Grid>
           <Popup x:Name="AudioTrackPickerPopup" PlacementTarget="{Binding #AudioTrackButton}" Placement="Top" IsOpen="False" IsLightDismissEnabled="True">
             <Border Background="#181818" BorderBrush="#383838" BorderThickness="1" CornerRadius="12" Padding="12" Width="300" MaxHeight="260">
