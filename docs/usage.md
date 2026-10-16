@@ -47,6 +47,8 @@ Playback positions, subtitle selections and per-video subtitle delays are saved 
 
 ## Automatic subtitles
 
+For incorrect Turkish characters, choose **Settings > Subtitles > Subtitle character encoding > Turkish (Windows-1254)**. Encoding changes reload external subtitles. A synchronized copy with incorrectly decoded text can be repaired using its original subtitle while preserving its synchronized timestamps and manual delay.
+
 Settings > **Subtitles** controls automatic internet discovery, synchronization and the search language (English by default). Opening a video searches the OpenSubtitles repository and downloads a matching subtitle. Local files and matching embedded tracks do not suppress the online search. A subtitle previously downloaded for the same video/language can be reused from the application's download cache, preserving its saved manual delay. An explicitly saved subtitle-off choice is respected. Online matching prefers the video's OpenSubtitles hash, then checks the title, year and episode metadata. Episode matching understands `S02E03` and `2x03`; another season or episode is rejected. Ambiguous multi-episode files and multi-file download packages are left for manual selection.
 
 Create an [OpenSubtitles account and API key](https://opensubtitles.tawk.help/article/getting-started), then enter the key in Settings > **Subtitles**. No account password is stored. The key is stored in this computer's `settings.json`; alternatively, set `PANTHEON_OPENSUBTITLES_API_KEY` in the environment. Downloads are subject to the provider's quota. Errors and missing configuration appear in the CC popup and its tooltip, without interrupting playback. Download requests do not send the API key to the file host.

@@ -41,6 +41,28 @@ public sealed partial class SubtitleFileCache(string directory)
     public static Task SaveSynchronizationSourceAsync(string outputPath, string sourcePath, CancellationToken cancellationToken) =>
         File.WriteAllTextAsync(outputPath + ".source.json", JsonSerializer.Serialize(sourcePath), cancellationToken);
 
+    public bool RepairSynchronizedEncoding(string path, string codepage)
+    {
+        var source = FindSynchronizationSource(path);
+        if (source is null || !string.Equals(Path.GetExtension(source), ".srt", StringComparison.OrdinalIgnoreCase)
+            || !IsValidSrt(path) || new FileInfo(source).Length > SubtitleAutomationOptions.MaximumSubtitleBytes)
+            return false;
+        if (!SubtitleTextEncoding.TryRepairSynchronizedText(
+            File.ReadAllBytes(source), File.ReadAllText(path), codepage, out var repairedText)) return false;
+
+        var temporaryPath = path + $".{Guid.NewGuid():N}.tmp";
+        try
+        {
+            File.WriteAllText(temporaryPath, repairedText, new UTF8Encoding(false));
+            File.Move(temporaryPath, path, overwrite: true);
+            return true;
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+        }
+    }
+
     public async Task<string> SynchronizationPathAsync(
         string videoPath, string subtitlePath, string referenceStream, string encoding, CancellationToken cancellationToken)
     {

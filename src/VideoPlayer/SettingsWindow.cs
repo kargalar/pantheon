@@ -298,6 +298,25 @@ internal sealed class SettingsWindow : Window
         AutomationProperties.SetName(scaleMode, UiText.VideoScaleMode);
         layout.Children.Add(scaleMode);
 
+        layout.Children.Add(Description(UiText.PlaybackSpeedStepHelp));
+        AddSliderSetting(layout, UiText.PlaybackSpeedStep, _preferences.PlaybackSpeedStep, 0.05, 1.00,
+            value => UpdatePreferences(_preferences with { PlaybackSpeedStep = Math.Round(value, 2) }, applyAppearance: false),
+            value => $"{value:0.00}Ã—");
+        AddSliderSetting(layout, UiText.SubtitleTimingStep, _preferences.SubtitleDelayStep, 0.05, 1.00,
+            value => UpdatePreferences(_preferences with { SubtitleDelayStep = Math.Round(value, 2) }, applyAppearance: false),
+            value => UiText.Format(UiText.SecondsValueFormat, value));
+        layout.Children.Add(new TextBlock
+        {
+            Text = UiText.PlaybackSpeedRangesFrom025To10,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Brush.Parse("#A6A6A6"),
+            MaxWidth = 500
+        });
+    }
+
+    private void BuildSubtitlesPage(StackPanel layout)
+    {
+        layout.Children.Add(SectionTitle(UiText.SubtitleCharacterEncoding));
         layout.Children.Add(Description(UiText.IfSubtitleTextLooksIncorrectChooseTheFile));
         var subtitleCodepage = new ComboBox
         {
@@ -318,32 +337,8 @@ internal sealed class SettingsWindow : Window
         };
         AutomationProperties.SetName(subtitleCodepage, UiText.SubtitleCharacterEncoding);
         layout.Children.Add(subtitleCodepage);
-        layout.Children.Add(new TextBlock
-        {
-            Text = UiText.SubtitleEncodingHelp,
-            TextWrapping = TextWrapping.Wrap,
-            Foreground = Brush.Parse("#A6A6A6"),
-            MaxWidth = 500,
-            Margin = new Thickness(0, 5, 0, 10)
-        });
-        layout.Children.Add(Description(UiText.PlaybackSpeedStepHelp));
-        AddSliderSetting(layout, UiText.PlaybackSpeedStep, _preferences.PlaybackSpeedStep, 0.05, 1.00,
-            value => UpdatePreferences(_preferences with { PlaybackSpeedStep = Math.Round(value, 2) }, applyAppearance: false),
-            value => $"{value:0.00}×");
-        AddSliderSetting(layout, UiText.SubtitleTimingStep, _preferences.SubtitleDelayStep, 0.05, 1.00,
-            value => UpdatePreferences(_preferences with { SubtitleDelayStep = Math.Round(value, 2) }, applyAppearance: false),
-            value => UiText.Format(UiText.SecondsValueFormat, value));
-        layout.Children.Add(new TextBlock
-        {
-            Text = UiText.PlaybackSpeedRangesFrom025To10,
-            TextWrapping = TextWrapping.Wrap,
-            Foreground = Brush.Parse("#A6A6A6"),
-            MaxWidth = 500
-        });
-    }
+        layout.Children.Add(Description(UiText.SubtitleEncodingHelp));
 
-    private void BuildSubtitlesPage(StackPanel layout)
-    {
         layout.Children.Add(SectionTitle("Subtitle appearance"));
         layout.Children.Add(Description("Change the font, color, weight, and position. Changes are applied to the current video and saved automatically."));
         var fontFamily = new ComboBox { HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left, MinWidth = 260, Margin = new Thickness(0, 5, 0, 4) };

@@ -16,6 +16,15 @@ public sealed partial class MainWindow
     private long _subtitleOperationRevision;
     private string _subtitleAutomationStatus = "";
 
+    private void RepairSynchronizedSubtitleEncoding(string path, string codepage)
+    {
+        try { _subtitleCache.RepairSynchronizedEncoding(path, codepage); }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            AppLogger.Error("Synchronized subtitle encoding could not be repaired", exception);
+        }
+    }
+
     private void InitializeSubtitleAutomation()
     {
         CloseSubtitlePopupButton.Click += (_, _) => SubtitlePickerPopup.IsOpen = false;

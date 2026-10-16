@@ -373,6 +373,8 @@ public sealed partial class MainWindow : Window
                 if (!string.Equals(ReadTrackProperty(index, "type", string.Empty), "sub", StringComparison.Ordinal)
                     || string.IsNullOrWhiteSpace(ReadTrackProperty(index, "external-filename", string.Empty)))
                     continue;
+                RepairSynchronizedSubtitleEncoding(
+                    ReadTrackProperty(index, "external-filename", string.Empty), codepage);
                 var trackId = ReadTrackProperty(index, "id", -1);
                 if (trackId >= 0) Player.SubReload(trackId).Invoke();
             }
@@ -768,6 +770,7 @@ public sealed partial class MainWindow : Window
         try
         {
             var fullPath = Path.GetFullPath(path);
+            RepairSynchronizedSubtitleEncoding(fullPath, _preferences.SubtitleCodepage);
             var existingTrackId = FindLoadedSubtitleId(fullPath);
             if (existingTrackId is { } trackId)
             {

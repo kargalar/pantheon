@@ -2,10 +2,21 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="using:VideoPlayer"
         xmlns:core="clr-namespace:VideoPlayer.Core;assembly=VideoPlayer.Core"
+        xmlns:chrome="clr-namespace:Avalonia.Controls.Chrome;assembly=Avalonia.Controls"
         x:Class="VideoPlayer.MainWindow"
         Title="Pantheon" Icon="/Assets/pantheon.ico" Width="1120" Height="760" MinWidth="920" MinHeight="560"
         WindowDecorations="None" ExtendClientAreaToDecorationsHint="True" CanResize="True" ShowInTaskbar="True"
         Background="#090909" WindowStartupLocation="CenterScreen">
+  <Window.WindowDecorationsTheme>
+    <!-- The player supplies its own header, including in full screen. -->
+    <ControlTheme TargetType="chrome:WindowDrawnDecorations">
+      <Setter Property="Template">
+        <WindowDrawnDecorationsTemplate>
+          <chrome:WindowDrawnDecorationsContent />
+        </WindowDrawnDecorationsTemplate>
+      </Setter>
+    </ControlTheme>
+  </Window.WindowDecorationsTheme>
   <Grid x:Name="RootPanel" RowDefinitions="48,*,Auto" ColumnDefinitions="*,Auto" Margin="0">
     <Border x:Name="HeaderBar" Grid.Row="0" Grid.ColumnSpan="2" Background="#181818" BorderBrush="#2D2D2D" BorderThickness="1" CornerRadius="14,14,10,10"
             IsVisible="False" Opacity="0">

@@ -21,6 +21,8 @@ public sealed partial class SubtitleSynchronizer(SubtitleFileCache cache)
     {
         if (Path.GetExtension(subtitlePath).ToLowerInvariant() is not (".srt" or ".ass" or ".ssa" or ".vtt"))
             throw new NotSupportedException(UiText.UnsupportedSubtitleSyncFormat);
+        encoding = SubtitleTextEncoding.ResolveSynchronizationEncoding(
+            await File.ReadAllBytesAsync(subtitlePath, cancellationToken), encoding);
         var outputPath = await cache.SynchronizationPathAsync(videoPath, subtitlePath, referenceStream, encoding, cancellationToken);
         if (SubtitleFileCache.IsValidSrt(outputPath)) return new(outputPath, 0, 1, true);
 
