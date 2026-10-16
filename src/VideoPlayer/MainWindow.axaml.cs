@@ -60,6 +60,7 @@ public sealed partial class MainWindow : Window
     private Task _queuePersistenceTask = Task.CompletedTask;
     private Task _captureTask = Task.CompletedTask;
     private Bitmap? _captureThumbnail;
+    private bool _isCapturingFrame;
     private IReadOnlyList<string> _startupVideoPaths = Array.Empty<string>();
     private readonly List<string> _queuedVideos = [];
     private bool _queueItemsDirty = true;
@@ -915,17 +916,16 @@ public sealed partial class MainWindow : Window
 
     private Task CaptureFrameAsync()
     {
-        if (_timelineClosing || _currentVideo is null || !_captureTask.IsCompleted) return Task.CompletedTask;
+        if (_timelineClosing || _currentVideo is null || _isCapturingFrame) return Task.CompletedTask;
         if (_isDraggingSeek) EndTimelineDrag();
-        _captureNotificationTimer.Stop();
-        CaptureNotification.IsVisible = false;
-        SetCaptureThumbnail(null);
-        _captureTask = CaptureFrameCoreAsync(_currentVideo);
-        return _captureTask;
+        var captureTask = CaptureFrameCoreAsync(_currentVideo);
+        _captureTask = _captureTask.IsCompleted ? captureTask : Task.WhenAll(_captureTask, captureTask);
+        return captureTask;
     }
 
     private async Task CaptureFrameCoreAsync(string videoPath)
     {
+        _isCapturingFrame = true;
         try
         {
             var saveMode = ScreenshotSaveModeRules.Normalize(_preferences.ScreenshotSaveMode);
@@ -942,6 +942,7 @@ public sealed partial class MainWindow : Window
                 optimized: saveMode == ScreenshotSaveModeRules.Optimized,
                 onPreviewCaptured: thumbnail =>
                 {
+                    _isCapturingFrame = false;
                     if (_timelineClosing || !PathsEqual(_currentVideo, videoPath))
                     {
                         thumbnail.Dispose();
@@ -950,18 +951,21 @@ public sealed partial class MainWindow : Window
                     SetCaptureThumbnail(thumbnail);
                     ShowCaptureThumbnailNotification();
                 });
-            if (_timelineClosing) return;
-            ShowCaptureThumbnailNotification();
         }
         catch (Exception exception)
         {
             AppLogger.Error("Screenshot capture failed", exception);
             if (!_timelineClosing)
             {
+                _captureNotificationTimer.Stop();
                 CaptureNotification.IsVisible = false;
                 SetCaptureThumbnail(null);
                 await ShowMessageAsync(UiText.CouldNotCaptureFrame, exception.Message);
             }
+        }
+        finally
+        {
+            _isCapturingFrame = false;
         }
     }
 
