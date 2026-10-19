@@ -2047,7 +2047,7 @@ public sealed partial class MainWindow : Window
         VideoFrame.SetValue(Grid.ColumnSpanProperty, _queuePanelPinned ? 1 : 2);
         QueuePanel.SetValue(Grid.ColumnProperty, _queuePanelPinned ? 1 : 0);
         QueuePanel.SetValue(Grid.ColumnSpanProperty, _queuePanelPinned ? 1 : 2);
-        var showQueuePanel = _queuePanelPinned || _queuedVideos.Count > 0 && _queuePanelHoverActive;
+        var showQueuePanel = _queuePanelPinned || _queuePanelHoverActive;
         TransitionPanelVisibility(QueuePanel, showQueuePanel, !_queuePanelPinned);
     }
 
@@ -2419,8 +2419,22 @@ public sealed partial class MainWindow : Window
     private void OnRootPointerActivity(object? sender, PointerEventArgs e)
     {
         ResetCursorHideTimer();
-        if (e is PointerPressedEventArgs && SubtitlePickerPopup.IsOpen && !SubtitleButton.IsPointerOver)
-            SubtitlePickerPopup.IsOpen = false;
+        if (e is PointerPressedEventArgs pressed)
+        {
+            if (SubtitlePickerPopup.IsOpen && !SubtitleButton.IsPointerOver)
+                SubtitlePickerPopup.IsOpen = false;
+
+            if (pressed.GetCurrentPoint(RootPanel).Properties.IsLeftButtonPressed)
+            {
+                var pos = pressed.GetPosition(RootPanel);
+                if (IsPointerInQueueRevealZone(pos.X, pos.Y))
+                {
+                    _queuePanelHoverActive = true;
+                    UpdateQueuePanel();
+                    pressed.Handled = true;
+                }
+            }
+        }
     }
 
     private void ResetCursorHideTimer()
@@ -2452,7 +2466,10 @@ public sealed partial class MainWindow : Window
         var bottomContextMenuOpen = BottomBar.ContextMenu?.IsOpen == true;
         var headerHovered = pointerWithinWindow && IsPointerInside(HeaderBar, pointerX, pointerY);
         var bottomHovered = pointerWithinWindow && IsPointerInside(BottomBar, pointerX, pointerY);
-        var queueHovered = pointerWithinWindow && IsPointerInside(QueuePanel, pointerX, pointerY);
+        var queuePanelWidth = QueuePanel.Bounds.Width > 0 ? QueuePanel.Bounds.Width + 10 : 302;
+        var queueHovered = pointerWithinWindow
+            && (IsPointerInside(QueuePanel, pointerX, pointerY)
+                || (_queuePanelHoverActive && pointerX >= RootPanel.Bounds.Width - queuePanelWidth));
         var pointerOverVideo = pointerWithinWindow && IsPointerInside(VideoFrame, pointerX, pointerY);
         var headerActive = _preferences.AutoHideHeader
             && (headerContextMenuOpen || pointerWithinWindow && (headerHovered || pointerY <= HeaderRevealZoneHeight));
@@ -2461,10 +2478,10 @@ public sealed partial class MainWindow : Window
             && (bottomContextMenuOpen || SubtitlePickerPopup.IsOpen || audioTrackPickerOpen || pointerWithinWindow
                 && (bottomHovered || pointerY >= RootPanel.Bounds.Height - BottomRevealZoneHeight));
         var queueActive = !_queuePanelPinned
-            && _queuedVideos.Count > 0
+            && _queuePanelHoverActive
             && pointerWithinWindow
             && !bottomHovered
-            && (queueHovered || pointerOverVideo && pointerX >= RootPanel.Bounds.Width - QueueRevealZoneWidth);
+            && queueHovered;
         if (headerActive == _headerHoverActive && bottomActive == _bottomHoverActive && queueActive == _queuePanelHoverActive) return;
 
         _headerHoverActive = headerActive;
@@ -2478,6 +2495,16 @@ public sealed partial class MainWindow : Window
         control.IsVisible
         && pointerX >= control.Bounds.X && pointerX <= control.Bounds.Right
         && pointerY >= control.Bounds.Y && pointerY <= control.Bounds.Bottom;
+
+    private bool IsPointerInQueueRevealZone(double pointerX, double pointerY)
+    {
+        if (_queuePanelPinned || _queuePanelHoverActive) return false;
+        if (WindowState == WindowState.Normal && CanResize && pointerX >= Bounds.Width - 8) return false;
+        if (IsPointerInside(HeaderBar, pointerX, pointerY) || IsPointerInside(BottomBar, pointerX, pointerY)) return false;
+        return pointerX >= RootPanel.Bounds.Width - QueueRevealZoneWidth
+            && pointerX <= RootPanel.Bounds.Width
+            && pointerY >= 0 && pointerY <= RootPanel.Bounds.Height;
+    }
 
     private void TransitionPanelVisibility(Control panel, bool visible, bool shouldAutoHide)
     {
@@ -2600,6 +2627,15 @@ public sealed partial class MainWindow : Window
             || IsPointerInsideScreen(BottomBar, screenX, screenY)
             || IsPointerInsideScreen(QueuePanel, screenX, screenY))
             return false;
+
+        var isFarRight = screenX >= rootBottomRight.X - QueueRevealZoneWidth;
+        var isResizeEdge = WindowState == WindowState.Normal && CanResize && screenX >= rootBottomRight.X - 8;
+        if (gesture == MouseGesture.LeftClick && !_queuePanelPinned && !_queuePanelHoverActive && isFarRight && !isResizeEdge)
+        {
+            _queuePanelHoverActive = true;
+            UpdateQueuePanel();
+            return true;
+        }
 
         var relativeX = width > 0 ? (screenX - topLeft.X) / width : 0;
         var relativeY = height > 0 ? (screenY - topLeft.Y) / height : 0;
