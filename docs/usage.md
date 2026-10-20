@@ -84,6 +84,8 @@ dotnet run --project .\tools\SubtitleAutomationCheck -- .\tests\VideoPlayer.Test
 
 This checks automatic repository search/download for both films and episodes through controlled HTTP responses, including when a local subtitle is already loaded or a matching Turkish embedded track exists. It also checks real speech synchronization, reopening/manual-delay persistence, download cache reuse, continued playback, and cancellation during manual timing changes, episode switching and audio switching. The cancellation checks use a deliberately slow local worker. These controlled repository checks do not claim a live authenticated OpenSubtitles download.
 
+The check also routes pointer presses, movement and scrolling through the subtitle popup and verifies that clicking the main window still dismisses it. Append a video path and an external subtitle path to additionally verify synchronization of those files with an isolated profile; the original files are preserved.
+
 The screenshot command saves the video at its original resolution without subtitles or player UI. Screenshots use the embedded GPU renderer's HDR tone mapping, so HDR videos produce standard 8-bit SDR images with the same colors as playback. Original mode writes PNG; optimized mode writes high-quality JPEG with minimal visible loss.
 
 To verify HDR screenshots with the actual Avalonia/OpenGL renderer on Windows, use an HDR video longer than 61 seconds:

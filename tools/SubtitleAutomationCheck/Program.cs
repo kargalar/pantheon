@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Win32;
 using HanumanInstitute.LibMpv;
@@ -18,14 +19,15 @@ using VideoPlayer.Core;
 internal static partial class Program
 {
     private static readonly TimeSpan OperationTimeout = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan MediaSynchronizationTimeout = TimeSpan.FromMinutes(10);
 
     [STAThread]
     public static int Main(string[] args)
     {
         if (args.Contains("-i")) return RunSlowSynchronizer(args);
-        if (args.Length != 2 || !Directory.Exists(args[0]))
+        if (args.Length is not (2 or 4) || !Directory.Exists(args[0]))
         {
-            Console.Error.WriteLine("Usage: dotnet run --project tools/SubtitleAutomationCheck -- tests/VideoPlayer.Tests/TestData artifacts/subtitle-ui-check");
+            Console.Error.WriteLine("Usage: dotnet run --project tools/SubtitleAutomationCheck -- tests/VideoPlayer.Tests/TestData artifacts/subtitle-ui-check [video subtitle]");
             return 2;
         }
         var fixtures = Path.GetFullPath(args[0]);
@@ -58,7 +60,11 @@ internal static partial class Program
                         lifetime.MainWindow = window;
                         window.Show();
                         initialWindow?.Close();
+                        await Task.Yield();
+                        VerifyPopupPointerRouting(window);
                         await VerifyAsync(window, fixtures, output, profile, preferences, repository);
+                        if (args.Length == 4)
+                            await VerifyExternalSubtitleAsync(window, args[2], args[3], profile, preferences);
                         Console.WriteLine("PASS: online repository search/download, local and embedded subtitle precedence, real speech sync, playback, cache, manual adjustment, media/audio switching and cancellation (controlled HTTP repository).");
                         lifetime.Shutdown();
                     }
@@ -69,6 +75,74 @@ internal static partial class Program
                     }
                 };
             }).StartWithClassicDesktopLifetime(args);
+    }
+
+    private static void VerifyPopupPointerRouting(MainWindow window)
+    {
+        var popup = window.FindControl<Avalonia.Controls.Primitives.Popup>("SubtitlePickerPopup")!;
+        var button = window.FindControl<Button>("SynchronizeSubtitleButton")!;
+        popup.IsOpen = true;
+        window.UpdateLayout();
+        var popupRoot = TopLevel.GetTopLevel(button)
+            ?? throw new InvalidOperationException("The subtitle menu must be attached to a visual root.");
+        Require(!ReferenceEquals(popupRoot, window), "The subtitle menu must use a separate visual root.");
+        var buttonPosition = button.TranslatePoint(new Point(button.Bounds.Width / 2, button.Bounds.Height / 2), popupRoot)
+            ?? throw new InvalidOperationException("The subtitle button must have coordinates in the popup.");
+        var pointer = new Avalonia.Input.Pointer(1, PointerType.Mouse, true);
+        var properties = new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed);
+        var pressed = new PointerPressedEventArgs(button, pointer, popupRoot, buttonPosition, 0, properties, KeyModifiers.None);
+        var reachedMenu = false;
+        EventHandler<PointerPressedEventArgs> verifyPress = (_, e) =>
+        {
+            Require(!e.Handled, "The window's resize and queue handlers must not consume subtitle menu presses.");
+            reachedMenu = true;
+        };
+        button.AddHandler(InputElement.PointerPressedEvent, verifyPress, RoutingStrategies.Tunnel);
+        button.RaiseEvent(pressed);
+        button.RemoveHandler(InputElement.PointerPressedEvent, verifyPress);
+        Require(reachedMenu, "The press must reach the subtitle menu control.");
+        Require(popup.IsOpen, "Pressing a subtitle menu control must not close or detach the popup.");
+        button.RaiseEvent(new PointerEventArgs(InputElement.PointerMovedEvent, button, pointer, popupRoot,
+            buttonPosition, 1, properties, KeyModifiers.None));
+        button.RaiseEvent(new PointerWheelEventArgs(button, pointer, popupRoot, buttonPosition, 2,
+            properties, KeyModifiers.None, new Vector(0, -1)));
+        Require(popup.IsOpen, "Moving or scrolling inside the subtitle menu must keep it attached.");
+        button.RaiseEvent(new PointerReleasedEventArgs(button, pointer, popupRoot, buttonPosition, 3,
+            new PointerPointProperties(RawInputModifiers.None, PointerUpdateKind.LeftButtonReleased), KeyModifiers.None, MouseButton.Left));
+        var root = window.FindControl<Grid>("RootPanel")!;
+        root.RaiseEvent(new PointerPressedEventArgs(root, pointer, window,
+            new Point(window.Bounds.Width / 2, window.Bounds.Height / 2), 4, properties, KeyModifiers.None));
+        Require(!popup.IsOpen, "Pressing the main window must still dismiss the subtitle menu.");
+        Console.WriteLine("PASS: subtitle popup presses, movement and scrolling preserve the popup visual tree.");
+    }
+
+    private static async Task VerifyExternalSubtitleAsync(MainWindow window, string video, string subtitle,
+        string profile, PlayerPreferences preferences)
+    {
+        Invoke(window, "SavePreferences", preferences with { AutoFindSubtitles = false, AutoSynchronizeSubtitles = false });
+        var player = window.FindControl<ToneMappedVideoView>("VideoSurface")!.MpvContext;
+        var originalHash = System.Security.Cryptography.SHA256.HashData(await File.ReadAllBytesAsync(subtitle));
+        Open(window, Path.GetFullPath(video));
+        await WaitUntilAsync(() => string.Equals(player.GetProperty<string>("path"), Path.GetFullPath(video), StringComparison.OrdinalIgnoreCase)
+            && player.GetProperty<double>("duration") > 0
+            && window.FindControl<Button>("SynchronizeSubtitleButton")!.IsEnabled
+            && (bool)typeof(MainWindow).GetField("_hasAppliedTrackPreferences", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(window)!);
+        Invoke(window, "AddSubtitle", Path.GetFullPath(subtitle), true, false);
+        player.SetProperty("pause", false);
+        VerifyPopupPointerRouting(window);
+        window.FindControl<Button>("SynchronizeSubtitleButton")!.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await WaitUntilAsync(() => typeof(MainWindow).GetField("_subtitleAutomationCancellation",
+            BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(window) is null, MediaSynchronizationTimeout);
+        var result = SelectedExternalSubtitle(player);
+        Require(result.EndsWith(".synced.srt", StringComparison.Ordinal) && SubtitleFileCache.IsValidSrt(result),
+            $"The supplied subtitle must synchronize successfully: {window.FindControl<TextBlock>("SubtitleAutomationStatus")!.Text}");
+        Require(new SubtitleFileCache(Path.Combine(profile, "Subtitles")).FindSynchronizationSource(result) == Path.GetFullPath(subtitle),
+            "The synchronized output must refer to the supplied original subtitle.");
+        var currentHash = System.Security.Cryptography.SHA256.HashData(await File.ReadAllBytesAsync(subtitle));
+        Require(originalHash.SequenceEqual(currentHash),
+            "Synchronization must preserve the supplied subtitle file.");
+        Require(!player.GetProperty<bool>("pause"), "The supplied video must keep playing during synchronization.");
+        Console.WriteLine($"PASS: supplied video/subtitle synchronized with uninterrupted playback; output: {result}");
     }
 
     private static async Task VerifyAsync(MainWindow window, string fixtures, string output, string profile, PlayerPreferences preferences, FixtureRepository repository)
@@ -85,7 +159,7 @@ internal static partial class Program
         var player = window.FindControl<ToneMappedVideoView>("VideoSurface")!.MpvContext;
         var status = window.FindControl<TextBlock>("SubtitleAutomationStatus")!;
         Open(window, first);
-        await WaitUntilAsync(() => status.Text?.StartsWith("Subtitles synchronized", StringComparison.Ordinal) == true);
+        await WaitUntilAsync(() => SelectedExternalSubtitle(player).EndsWith(".synced.srt", StringComparison.Ordinal));
         var synchronizedPath = SelectedExternalSubtitle(player);
         var cache = new SubtitleFileCache(Path.Combine(profile, "Subtitles"));
         var source = cache.DownloadPath(first, "tr");
@@ -109,8 +183,7 @@ internal static partial class Program
         Console.WriteLine("PASS: reopening preserves manually adjusted synchronization.");
 
         Invoke(window, "ResetSubtitleDelay");
-        window.FindControl<Button>("SynchronizeSubtitleButton")!.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        await WaitUntilAsync(() => status.Text == "Loaded cached synchronized subtitles.");
+        await (Task)Invoke(window, "RunSubtitleAutomationAsync", false, true, true)!;
         Require(SelectedExternalSubtitle(player) == synchronizedPath, "Cached synchronization must be reused.");
 
         var slowPreferences = preferences with { SubtitleSynchronizerPath = Environment.ProcessPath! };
@@ -139,7 +212,7 @@ internal static partial class Program
         Require(File.ReadAllText(SelectedExternalSubtitle(player)).Contains("SECOND_EPISODE", StringComparison.Ordinal), "The repository download must match the new episode.");
         Console.WriteLine("PASS: switching episodes discards the previous video's result.");
 
-        var audioSelector = window.FindControl<ComboBox>("AudioTrackSelector")!;
+        var audioSelector = window.FindControl<ListBox>("AudioTrackList")!;
         window.FindControl<Button>("SynchronizeSubtitleButton")!.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await WaitUntilAsync(() => WorkerStarted(profile));
         audioSelector.SelectedIndex = 1; // index 0 is off, index 1 is the silent audio stream.
@@ -163,8 +236,9 @@ internal static partial class Program
         Require(File.ReadAllText(SelectedExternalSubtitle(player)).Contains("REMOTE_MOVIE", StringComparison.Ordinal), "The repository result must belong to the film.");
         Console.WriteLine("PASS: automatic repository download also works for films.");
         repository.RefreshMovieSubtitle();
-        window.FindControl<Button>("FindSubtitleButton")!.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        await WaitUntilAsync(() => repository.DownloadCount == 5 && status.Text == "Subtitle downloaded from OpenSubtitles and loaded.");
+        await (Task)Invoke(window, "RunSubtitleAutomationAsync", true, false, true)!;
+        Require(repository.DownloadCount == 5 && status.Text == UiText.SubtitleDownloadedFromOpenSubtitlesAndLoaded,
+            "An explicit repository lookup must refresh the downloaded subtitle.");
         player.SetProperty("pause", true);
         player.Seek(6.0, SeekOption.Absolute | SeekOption.Exact).Invoke();
         await WaitUntilAsync(() => player.GetProperty<string>("sub-text")?.Contains("REMOTE_MOVIE_REFRESH", StringComparison.Ordinal) == true);
@@ -205,9 +279,9 @@ internal static partial class Program
     private static object? Invoke(MainWindow window, string method, params object[] args) =>
         typeof(MainWindow).GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window, args);
 
-    private static async Task WaitUntilAsync(Func<bool> predicate)
+    private static async Task WaitUntilAsync(Func<bool> predicate, TimeSpan? operationTimeout = null)
     {
-        using var timeout = new CancellationTokenSource(OperationTimeout);
+        using var timeout = new CancellationTokenSource(operationTimeout ?? OperationTimeout);
         while (true)
         {
             try { if (predicate()) return; }

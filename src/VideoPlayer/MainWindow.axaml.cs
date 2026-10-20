@@ -2365,7 +2365,7 @@ public sealed partial class MainWindow : Window
 
     private void OnResizePointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (e.KeyModifiers != KeyModifiers.None) return;
+        if (!IsPointerFromMainWindow(e) || e.KeyModifiers != KeyModifiers.None) return;
         var resizeEdge = GetResizeEdge(e.GetPosition(this));
         if (resizeEdge is null) return;
         BeginResizeDrag(resizeEdge.Value, e);
@@ -2400,6 +2400,7 @@ public sealed partial class MainWindow : Window
 
     private void OnRootPointerMoved(object? sender, PointerEventArgs e)
     {
+        if (!IsPointerFromMainWindow(e)) return;
         ResetCursorHideTimer();
         var position = e.GetPosition(RootPanel);
         var pointerWithinWindow = position.X >= 0 && position.X <= RootPanel.Bounds.Width
@@ -2410,6 +2411,7 @@ public sealed partial class MainWindow : Window
 
     private void OnRootPointerExited(object? sender, PointerEventArgs e)
     {
+        if (!IsPointerFromMainWindow(e)) return;
         _cursorHideTimer.Stop();
         ShowCursor();
         Cursor = null;
@@ -2418,6 +2420,7 @@ public sealed partial class MainWindow : Window
 
     private void OnRootPointerActivity(object? sender, PointerEventArgs e)
     {
+        if (!IsPointerFromMainWindow(e)) return;
         ResetCursorHideTimer();
         if (e is PointerPressedEventArgs pressed)
         {
@@ -2436,6 +2439,11 @@ public sealed partial class MainWindow : Window
             }
         }
     }
+
+    // Popup input bubbles through its logical owner, but uses a separate visual tree.
+    // Closing that popup here detaches the event's root before coordinate conversion.
+    private bool IsPointerFromMainWindow(PointerEventArgs e) =>
+        e.Source is Visual source && ReferenceEquals(TopLevel.GetTopLevel(source), this);
 
     private void ResetCursorHideTimer()
     {
