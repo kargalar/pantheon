@@ -31,6 +31,12 @@ public sealed partial class SubtitleSynchronizer(SubtitleFileCache cache)
         var temporaryOutput = Path.Combine(workDirectory, "aligned.srt");
         try
         {
+            var referencePath = videoPath;
+            var embeddedReference = Path.Combine(workDirectory, "reference.srt");
+            var useStreamReference = !referenceStream.StartsWith("0:s:", StringComparison.Ordinal)
+                || !await TryExtractEmbeddedSubtitleAsync(videoPath, referenceStream, executable, embeddedReference, cancellationToken);
+            if (!useStreamReference) referencePath = embeddedReference;
+
             var start = new ProcessStartInfo(executable)
             {
                 UseShellExecute = false,
@@ -43,12 +49,18 @@ public sealed partial class SubtitleSynchronizer(SubtitleFileCache cache)
             start.Environment["COLUMNS"] = "1000";
             foreach (var argument in new[]
             {
-                videoPath, "-i", subtitlePath, "-o", temporaryOutput,
-                "--vad", "webrtc",
-                "--reference-stream", referenceStream, "--encoding", encoding, "--output-encoding", "utf-8",
+                referencePath, "-i", subtitlePath, "-o", temporaryOutput,
+                "--encoding", encoding, "--output-encoding", "utf-8",
                 "--max-offset-seconds", MaximumOffsetSeconds.ToString(CultureInfo.InvariantCulture),
                 "--log-dir-path", workDirectory
             }) start.ArgumentList.Add(argument);
+            if (useStreamReference)
+            {
+                start.ArgumentList.Add("--vad");
+                start.ArgumentList.Add("subs_then_webrtc");
+                start.ArgumentList.Add("--reference-stream");
+                start.ArgumentList.Add(referenceStream);
+            }
             var ffmpegDirectory = Path.GetDirectoryName(Path.GetFullPath(executable));
             if (File.Exists(Path.Combine(ffmpegDirectory!, "ffmpeg.exe")))
             {
@@ -93,6 +105,43 @@ public sealed partial class SubtitleSynchronizer(SubtitleFileCache cache)
         {
             if (Directory.Exists(workDirectory)) Directory.Delete(workDirectory, recursive: true);
         }
+    }
+
+    private static async Task<bool> TryExtractEmbeddedSubtitleAsync(
+        string videoPath, string referenceStream, string executable, string outputPath, CancellationToken cancellationToken)
+    {
+        var directory = Path.GetDirectoryName(Path.GetFullPath(executable));
+        var bundled = Path.Combine(directory!, "ffmpeg.exe");
+        var ffmpeg = File.Exists(bundled) ? bundled : "ffmpeg";
+        var start = new ProcessStartInfo(ffmpeg)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+        foreach (var argument in new[]
+        {
+            "-hide_banner", "-loglevel", "error", "-nostdin", "-i", videoPath,
+            "-map", referenceStream, "-f", "srt", "-y", outputPath
+        }) start.ArgumentList.Add(argument);
+        using var process = new Process { StartInfo = start };
+        try { process.Start(); }
+        catch (Win32Exception) { return false; }
+        var stdout = process.StandardOutput.ReadToEndAsync();
+        var stderr = process.StandardError.ReadToEndAsync();
+        try
+        {
+            await process.WaitForExitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            if (!process.HasExited) process.Kill(entireProcessTree: true);
+            await Task.WhenAll(stdout, stderr);
+            throw;
+        }
+        await Task.WhenAll(stdout, stderr);
+        return process.ExitCode == 0 && SubtitleFileCache.IsValidSrt(outputPath);
     }
 
     public static (double Offset, double Scale)? ParseAlignment(string log)

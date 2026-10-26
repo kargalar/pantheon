@@ -19,6 +19,8 @@ namespace VideoPlayer;
 public readonly record struct QueueListItem(string Path, int Index)
 {
     public string Name => System.IO.Path.GetFileName(Path);
+    public string Folder => System.IO.Path.GetDirectoryName(Path) ?? string.Empty;
+    public int Position => Index + 1;
 }
 
 public sealed partial class MainWindow : Window
@@ -327,6 +329,7 @@ public sealed partial class MainWindow : Window
         UpdateSubtitleDelayTooltip();
         Player.ScreenshotTagColorspace.Set(true);
         Player.ScreenshotHighBitDepth.Set(true);
+        Player.SetPropertyString("alang", "en,eng,english");
         Player.SetProperty("volume-max", (long)PlayerPreferences.MaximumVolume);
         Player.SetProperty("hwdec", _preferences.HardwareAcceleration ? "auto" : "no");
         ApplyVideoDisplayPreferences();
@@ -1259,13 +1262,13 @@ public sealed partial class MainWindow : Window
 
     private void UpdatePlaybackTimeDisplay(double position, double duration)
     {
-        var positionSecond = MediaTimeFormatter.GetPlaybackSecond(position);
-        var durationSecond = MediaTimeFormatter.GetPlaybackSecond(duration);
+        var positionSecond = MediaTimeFormatter.GetPlaybackSecond(position, _playbackSpeed);
+        var durationSecond = MediaTimeFormatter.GetPlaybackSecond(duration, _playbackSpeed);
         if (positionSecond == _lastDisplayedPositionSecond
             && durationSecond == _lastDisplayedDurationSecond
             && _playbackSpeed == _lastDisplayedPlaybackSpeed) return;
 
-        TimeLabel.Text = $"{MediaTimeFormatter.FormatPlaybackTime(position)} / {MediaTimeFormatter.FormatPlaybackTime(duration)}";
+        TimeLabel.Text = $"{MediaTimeFormatter.FormatPlaybackTime(position, _playbackSpeed)} / {MediaTimeFormatter.FormatPlaybackTime(duration, _playbackSpeed)}";
         ToolTip.SetTip(TimeLabel, UiText.CurrentTimeTotalDuration);
         _lastDisplayedPositionSecond = positionSecond;
         _lastDisplayedDurationSecond = durationSecond;
@@ -1317,8 +1320,8 @@ public sealed partial class MainWindow : Window
 
         if (!_hasAppliedTrackPreferences && _subtitleMediaReady && trackCount > 0)
         {
-            ApplyPreferredTrack(audioTracks, _preferences.PreferredAudioLanguage,
-                _preferences.PreferredAudioTrackIndex, "aid");
+            ApplyPreferredAudioTrack(audioTracks);
+
             if (_preferences.AudioTrackDisabled) Player.SetPropertyString("aid", "no");
             if (_selectedExternalSubtitlePath is null && _selectedSubtitleTrackId is { } selectedTrackId)
             {
@@ -1502,7 +1505,7 @@ public sealed partial class MainWindow : Window
             }
             var label = BuildTrackLabel(type, ordinal, title, language, codec, isDefault, isForced, isExternal, sourceTag);
             metadata.Add(new TrackMetadata(index, type,
-                new MediaTrackOption(id, label, isSelected, language, ordinal)));
+                new MediaTrackOption(id, label, isSelected, language, ordinal, title)));
         }
 
         return metadata;
@@ -1719,7 +1722,22 @@ public sealed partial class MainWindow : Window
         if (preferred is not null && !preferred.IsSelected) Player.SetProperty(property, (long)preferred.Id);
     }
 
-    private sealed record MediaTrackOption(int Id, string Label, bool IsSelected, string Language, int Ordinal);
+    private void ApplyPreferredAudioTrack(IReadOnlyList<MediaTrackOption> tracks)
+    {
+        if (tracks.Count == 0) return;
+        var preferredTrackIndex = MediaTrackPreferenceRules.FindPreferredAudioTrackIndex(
+            tracks,
+            _preferences.PreferredAudioLanguage,
+            _preferences.PreferredAudioTrackIndex,
+            track => track.Language,
+            track => track.Title,
+            track => track.Ordinal);
+        if (preferredTrackIndex < 0) return;
+        var preferred = tracks[preferredTrackIndex];
+        if (preferred is not null && !preferred.IsSelected) Player.SetProperty("aid", (long)preferred.Id);
+    }
+
+    private sealed record MediaTrackOption(int Id, string Label, bool IsSelected, string Language, int Ordinal, string Title = "");
     private sealed record TrackMetadata(int Index, string Type, MediaTrackOption Option);
 
     private void RestorePendingProgress(double duration)
@@ -2038,6 +2056,12 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetName(QueuePanelPinButton, pinAction);
         ToolTip.SetTip(QueuePanelPinButton, pinAction);
         QueueCurrentLabel.Text = _currentVideo is null ? UiText.NowPlaying : UiText.Format(UiText.NowPlayingFormat, Path.GetFileName(_currentVideo));
+        QueueCurrentFolderLabel.Text = _currentVideo is null ? string.Empty : Path.GetDirectoryName(_currentVideo) ?? string.Empty;
+        QueueItemsCountLabel.Text = _queuedVideos.Count == 1
+            ? UiText.Format(UiText.QueueItemCountSingularFormat, _queuedVideos.Count)
+            : UiText.Format(UiText.QueueItemCountFormat, _queuedVideos.Count);
+        QueueEmptyNotice.IsVisible = _queuedVideos.Count == 0;
+        QueueItems.IsVisible = _queuedVideos.Count > 0;
         if (_queueItemsDirty)
         {
             QueueItems.ItemsSource = _queuedVideos.Select((path, index) => new QueueListItem(path, index)).ToArray();
@@ -2713,7 +2737,10 @@ public sealed partial class MainWindow : Window
         UpdateSpeedLabel();
         SavePreferences(_preferences);
         if (_currentVideo is not null)
+        {
             ShowSpeedNotification();
+            UpdatePlaybackStatus();
+        }
     }
 
     private void ShowSpeedNotification() => ShowTransientNotification("⏩", SpeedLabel.Text ?? $"{_playbackSpeed.ToString("0.00", CultureInfo.InvariantCulture)}×");

@@ -90,33 +90,52 @@
             HorizontalAlignment="Right"
             Background="#181818" BorderBrush="#2D2D2D" BorderThickness="1" CornerRadius="14"
             IsVisible="False" Opacity="0" ClipToBounds="True">
-      <Grid RowDefinitions="Auto,Auto,Auto,*">
+      <Grid RowDefinitions="Auto,Auto,Auto,Auto,*">
         <Grid ColumnDefinitions="*,Auto" Margin="2,0,0,10">
           <TextBlock Text="{x:Static core:UiText.PlaybackQueue}" FontSize="15" FontWeight="SemiBold" Foreground="#F2F2F2" VerticalAlignment="Center" />
-          <Button x:Name="QueuePanelPinButton" Grid.Column="1" Content="◇" Width="34" Height="32" Padding="0" ToolTip.Tip="{x:Static core:UiText.PinPanel}" AutomationProperties.Name="{x:Static core:UiText.PinPlaybackQueue}" />
+          <Button x:Name="QueuePanelPinButton" Grid.Column="1" Content="&#x25C7;" Width="34" Height="32" Padding="0" ToolTip.Tip="{x:Static core:UiText.PinPanel}" AutomationProperties.Name="{x:Static core:UiText.PinPlaybackQueue}" />
         </Grid>
-        <TextBlock x:Name="QueueCurrentLabel" Grid.Row="1" Text="{x:Static core:UiText.NowPlaying}" Foreground="#A7A7A7" FontSize="11"
-                   TextTrimming="CharacterEllipsis" ToolTip.Tip="{x:Static core:UiText.CurrentlyPlayingVideo}" Margin="2,0,2,8" />
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6" Margin="2,0,2,10">
+          <TextBlock Text="{x:Static core:UiText.NowPlaying}" Foreground="#A7A7A7" FontSize="11" />
+          <TextBlock x:Name="QueueItemsCountLabel" Foreground="{DynamicResource AccentBrush}" FontSize="11" FontWeight="SemiBold" />
+        </StackPanel>
+        <StackPanel Grid.Row="2" Spacing="3" Margin="2,0,2,10">
+          <TextBlock x:Name="QueueCurrentLabel" Text="{x:Static core:UiText.NowPlaying}" Foreground="#F2F2F2" FontSize="12"
+                     TextTrimming="CharacterEllipsis" ToolTip.Tip="{x:Static core:UiText.CurrentlyPlayingVideo}" />
+          <TextBlock x:Name="QueueCurrentFolderLabel" Foreground="#858585" FontSize="10" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
           <Button x:Name="OpenPlaylistButton" Content="{x:Static core:UiText.OpenPlaylist}" HorizontalAlignment="Stretch"
                   ToolTip.Tip="{x:Static core:UiText.OpenM3UPlaylist}" AutomationProperties.Name="{x:Static core:UiText.OpenPlaylist}" />
           <Button x:Name="SavePlaylistButton" Content="{x:Static core:UiText.SaveQueue}" HorizontalAlignment="Stretch"
                   ToolTip.Tip="{x:Static core:UiText.SaveTheCurrentVideoAndQueueAsAn}"
                   AutomationProperties.Name="{x:Static core:UiText.SaveQueueAsM3u}" />
         </StackPanel>
-        <ListBox x:Name="QueueItems" Grid.Row="3" Background="#101010" Foreground="#F2F2F2"
-                 BorderBrush="#2D2D2D" BorderThickness="1" CornerRadius="10"
-                 ToolTip.Tip="{x:Static core:UiText.ClickToPlayDragToReorderClickTo}">
-          <ListBox.ItemTemplate>
-            <DataTemplate x:DataType="local:QueueListItem">
-              <Grid ColumnDefinitions="*,Auto" Margin="3,2">
-                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="8,0" />
-                <Button Grid.Column="1" Content="×" Tag="{Binding Index}" Width="32" Height="32" Padding="0"
-                        ToolTip.Tip="{x:Static core:UiText.RemoveFromQueue}" AutomationProperties.Name="{x:Static core:UiText.RemoveVideoFromQueue}" Click="OnQueueRemoveClick" />
-              </Grid>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
+        <Grid Grid.Row="4">
+          <TextBlock x:Name="QueueEmptyNotice" Text="{x:Static core:UiText.QueueIsEmpty}" TextWrapping="Wrap"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                     Foreground="#858585" FontSize="12" Margin="18" IsVisible="False" />
+          <ListBox x:Name="QueueItems" Background="#101010" Foreground="#F2F2F2"
+                   BorderBrush="#2D2D2D" BorderThickness="1" CornerRadius="10"
+                   ToolTip.Tip="{x:Static core:UiText.ClickToPlayDragToReorderClickTo}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="local:QueueListItem">
+                <Grid ColumnDefinitions="24,*,Auto" Margin="3,3">
+                  <TextBlock Text="{Binding Position}" VerticalAlignment="Top" HorizontalAlignment="Center"
+                             Foreground="{DynamicResource AccentBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,5,0,0" />
+                  <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center" Margin="4,3,6,3">
+                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                               ToolTip.Tip="{Binding Path}" />
+                    <TextBlock Text="{Binding Folder}" Foreground="#858585" FontSize="10" TextTrimming="CharacterEllipsis"
+                               ToolTip.Tip="{Binding Folder}" />
+                  </StackPanel>
+                  <Button Grid.Column="2" Content="&#xD7;" Tag="{Binding Index}" Width="32" Height="32" Padding="0"
+                          ToolTip.Tip="{x:Static core:UiText.RemoveFromQueue}" AutomationProperties.Name="{x:Static core:UiText.RemoveVideoFromQueue}" Click="OnQueueRemoveClick" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Grid>
       </Grid>
     </Border>
 

@@ -300,6 +300,20 @@ public sealed class SubtitleAutomationTests
     }
 
     [Theory]
+    [InlineData(new[] { "hdmv_pgs_subtitle", "subrip" }, null, null, 1)]
+    [InlineData(new[] { "subrip", "ass" }, null, null, 0)]
+    [InlineData(new[] { "subrip", "ass" }, null, 1, 1)]
+    [InlineData(new[] { "hdmv_pgs_subtitle", "dvd_subtitle" }, null, null, null)]
+    [InlineData(new[] { "subrip" }, true, null, null)]
+    public void EmbeddedTextSubtitleIsPreferredOverBitmapForcedAndMissingTracks(
+        string[] codecs, bool? forcedFirst, int? selected, int? expected)
+    {
+        var tracks = codecs.Select((codec, index) => new EmbeddedSubtitleTrack(
+            codec, forcedFirst == true && index == 0, selected == index)).ToArray();
+        Assert.Equal(expected, SubtitleReferenceRules.SelectEmbeddedTextSubtitle(tracks));
+    }
+
+    [Theory]
     [InlineData("score: 600\noffset seconds: -3.1\nframerate scale factor: 1.0\ntotal of speech segments: 1000", true)]
     [InlineData("score: -10\noffset seconds: 3\nframerate scale factor: 1.0\ntotal of speech segments: 1000", false)]
     [InlineData("score: 60\noffset seconds: 60\nframerate scale factor: 1.0\ntotal of speech segments: 1000", false)]

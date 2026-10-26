@@ -171,6 +171,9 @@ public static class UiText
     public const string PlaybackPosition = "Playback position";
     public const string PlaybackProgressMustContainValidNumbers = "Playback progress must contain valid numbers.";
     public const string PlaybackQueue = "Playback queue";
+    public const string QueueItemCountFormat = "{0} videos queued";
+    public const string QueueItemCountSingularFormat = "{0} video queued";
+    public const string QueueIsEmpty = "No videos are waiting in the queue.";
     public const string PlaybackQueueM3u8 = "Playback queue.m3u8";
     public const string PlaybackSpeedRangesFrom025To10 = "Playback speed ranges from 0.25× to 10.00×. Subtitle timing shortcuts move the selected subtitle earlier or later by this step.";
     public const string PlaybackSpeedStep = "Playback speed step";

@@ -69,7 +69,7 @@ public sealed partial class SubtitleFileCache(string directory)
         await using var input = File.OpenRead(subtitlePath);
         var contentHash = Convert.ToHexString(await SHA256.HashDataAsync(input, cancellationToken));
         return Path.Combine(directory, CreateKey(
-            $"sync-v1|{MediaStamp(videoPath)}|{contentHash}|{referenceStream}|{encoding}") + ".synced.srt");
+            $"sync-v2|{MediaStamp(videoPath)}|{contentHash}|{referenceStream}|{encoding}") + ".synced.srt");
     }
 
     public static string MediaStamp(string path)

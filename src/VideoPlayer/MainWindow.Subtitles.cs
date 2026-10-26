@@ -194,8 +194,8 @@ public sealed partial class MainWindow
         string videoPath, string subtitlePath, PlayerPreferences preferences, Func<bool> isCurrent, CancellationToken token)
     {
         var sourceSubtitlePath = _subtitleCache.FindSynchronizationSource(subtitlePath) ?? subtitlePath;
-        var audioStream = GetSelectedAudioReferenceStream();
-        if (audioStream is null)
+        var referenceStream = GetSynchronizationReferenceStream();
+        if (referenceStream is null)
         {
             const string noAudioMsg = "Senkronizasyon için geçerli bir ses akışı seçin.";
             SetSubtitleAutomationStatus(noAudioMsg);
@@ -208,7 +208,7 @@ public sealed partial class MainWindow
         if (encoding == SubtitleCodepageRules.Auto) encoding = "infer";
         else if (encoding == "cp1254") encoding = "windows-1254";
         var result = await new SubtitleSynchronizer(_subtitleCache).SynchronizeAsync(videoPath, sourceSubtitlePath,
-            ResolveSubtitleSynchronizer(preferences.SubtitleSynchronizerPath), audioStream, encoding, token);
+            ResolveSubtitleSynchronizer(preferences.SubtitleSynchronizerPath), referenceStream, encoding, token);
         if (!isCurrent() || !PathsEqual(_selectedExternalSubtitlePath, subtitlePath)) return;
         AddSubtitle(result.Path, preferences.SubtitlesVisible, isAutomatic: true);
         if (!PathsEqual(_selectedExternalSubtitlePath, result.Path)) return;
@@ -226,6 +226,24 @@ public sealed partial class MainWindow
         Player.SetProperty("sub-delay", 0.0);
         UpdateSubtitleDelayTooltip();
         SaveCurrentProgress(force: true);
+    }
+
+    private string? GetSynchronizationReferenceStream()
+    {
+        var count = Math.Clamp(Player.GetProperty<int>("track-list/count"), 0, 256);
+        var embeddedSubtitles = new List<EmbeddedSubtitleTrack>();
+        for (var index = 0; index < count; index++)
+        {
+            if (ReadTrackProperty(index, "type", "") != "sub") continue;
+            if (ReadTrackProperty(index, "external", false)) continue;
+            embeddedSubtitles.Add(new EmbeddedSubtitleTrack(
+                ReadTrackProperty(index, "codec", ""),
+                ReadTrackProperty(index, "forced", false),
+                ReadTrackProperty(index, "selected", false)));
+        }
+        if (SubtitleReferenceRules.SelectEmbeddedTextSubtitle(embeddedSubtitles) is { } subtitleOrdinal)
+            return $"0:s:{subtitleOrdinal}";
+        return GetSelectedAudioReferenceStream();
     }
 
     private string? GetSelectedAudioReferenceStream()

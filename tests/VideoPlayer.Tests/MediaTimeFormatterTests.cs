@@ -34,4 +34,23 @@ public sealed class MediaTimeFormatterTests
     [InlineData(90000, "25:00:00")]
     public void FormatPreviewTime_UsesHoursForLongVideosWithoutWrapping(double seconds, string expected) =>
         Assert.Equal(expected, MediaTimeFormatter.FormatPreviewTime(seconds));
+
+    [Theory]
+    [InlineData(600, 1.2, "00:08:20")]
+    [InlineData(600, 2.0, "00:05:00")]
+    [InlineData(600, 0.5, "00:20:00")]
+    [InlineData(600, 1.0, "00:10:00")]
+    [InlineData(120, 1.2, "00:01:40")]
+    [InlineData(600, 0, "00:10:00")]
+    [InlineData(600, -1, "00:10:00")]
+    [InlineData(600, double.NaN, "00:10:00")]
+    public void FormatPlaybackTime_ScalesWithPlaybackSpeed(double seconds, double speed, string expected) =>
+        Assert.Equal(expected, MediaTimeFormatter.FormatPlaybackTime(seconds, speed));
+
+    [Theory]
+    [InlineData(12, 1.2, 10)]
+    [InlineData(600, 1.2, 500)]
+    [InlineData(600, 2.0, 300)]
+    public void GetPlaybackSecond_ScalesWithPlaybackSpeed(double seconds, double speed, long expected) =>
+        Assert.Equal(expected, MediaTimeFormatter.GetPlaybackSecond(seconds, speed));
 }
