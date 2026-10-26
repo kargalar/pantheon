@@ -80,6 +80,7 @@ public sealed partial class SubtitleSynchronizationIntegrationTests
     [InlineData(".ssa", "utf-8")]
     [InlineData(".vtt", "utf-8")]
     [InlineData(".srt", "windows-1254")]
+    [InlineData(".srt", "infer")]
     public async Task TextFormatsAndTurkishCodepageProduceValidUtf8Srt(string extension, string encoding)
     {
         var executable = MainWindow.ResolveSubtitleSynchronizer(SubtitleAutomationOptions.DefaultSynchronizer);
@@ -91,7 +92,8 @@ public sealed partial class SubtitleSynchronizationIntegrationTests
             var inputSrt = Path.Combine(directory, "input.srt");
             var shifted = TimestampPattern().Replace(reference, match => FormatTime(ParseTime(match.Value) + 3)).Replace("The train", "Türkçe: İğüşöç The train");
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            await File.WriteAllBytesAsync(inputSrt, Encoding.GetEncoding(encoding).GetBytes(shifted));
+            var sourceCodepage = encoding == "infer" ? "windows-1254" : encoding;
+            await File.WriteAllBytesAsync(inputSrt, Encoding.GetEncoding(sourceCodepage).GetBytes(shifted));
             var input = inputSrt;
             if (extension != ".srt")
             {
@@ -114,6 +116,57 @@ public sealed partial class SubtitleSynchronizationIntegrationTests
             Assert.True(SubtitleFileCache.IsValidSrt(result.Path));
             Assert.InRange(result.OffsetSeconds, -3.45, -2.55);
             Assert.Contains("Türkçe: İğüşöç", await File.ReadAllTextAsync(result.Path, Encoding.UTF8));
+        }
+        finally { Directory.Delete(directory, recursive: true); }
+    }
+
+    [SubtitleToolsFact]
+    public async Task EmbeddedSubtitleReferenceStream_AlignsDirectlyWithHighPrecision()
+    {
+        var executable = MainWindow.ResolveSubtitleSynchronizer(SubtitleAutomationOptions.DefaultSynchronizer);
+        var baseVideo = Path.Combine(AppContext.BaseDirectory, "TestData", "speech.mkv");
+        var referenceSrtPath = Path.Combine(AppContext.BaseDirectory, "TestData", "speech-reference.srt");
+        var referenceText = await File.ReadAllTextAsync(referenceSrtPath);
+        var directory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), $"pantheon-embedded-sub-{Guid.NewGuid():N}")).FullName;
+        try
+        {
+            var videoWithEmbeddedSub = Path.Combine(directory, "video-with-sub.mkv");
+            var ffmpeg = Path.Combine(Path.GetDirectoryName(executable)!, "ffmpeg.exe");
+            var muxStart = new ProcessStartInfo(ffmpeg)
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardError = true
+            };
+            foreach (var arg in new[]
+            {
+                "-hide_banner", "-loglevel", "error",
+                "-i", baseVideo, "-i", referenceSrtPath,
+                "-map", "0", "-map", "1:0",
+                "-c", "copy", "-c:s", "srt",
+                "-y", videoWithEmbeddedSub
+            }) muxStart.ArgumentList.Add(arg);
+
+            using (var mux = Process.Start(muxStart)!)
+            {
+                var err = await mux.StandardError.ReadToEndAsync();
+                await mux.WaitForExitAsync();
+                Assert.True(mux.ExitCode == 0, err);
+            }
+
+            var shiftedSrtPath = Path.Combine(directory, "shifted-tr.srt");
+            const double delay = 4.2;
+            var shiftedContent = "1\n00:00:00,500 --> 00:00:02,000\nÇeviri: Pantheon Test / @Pantheon\n\n"
+                + TimestampPattern().Replace(referenceText, match => FormatTime(ParseTime(match.Value) + delay));
+            await File.WriteAllTextAsync(shiftedSrtPath, shiftedContent, Encoding.UTF8);
+
+            var sync = new SubtitleSynchronizer(new SubtitleFileCache(directory));
+            var result = await sync.SynchronizeAsync(videoWithEmbeddedSub, shiftedSrtPath, executable, "0:s:0", "infer", default);
+
+            Assert.False(result.FromCache);
+            Assert.InRange(result.OffsetSeconds, -delay - 0.15, -delay + 0.15);
+            Assert.InRange(result.ScaleFactor, 0.998, 1.002);
+            Assert.True(SubtitleFileCache.IsValidSrt(result.Path));
         }
         finally { Directory.Delete(directory, recursive: true); }
     }

@@ -202,7 +202,7 @@ public sealed partial class MainWindow
             ShowStatusNotification(noAudioMsg);
             return;
         }
-        SetSubtitleAutomationStatus("Altyazı ses ile senkronize ediliyor (FFsubsync)...");
+        SetSubtitleAutomationStatus("Altyazı otomatik senkronize ediliyor...");
         ShowStatusNotification("Altyazı senkronizasyonu başlatıldı...");
         var encoding = SubtitleCodepageRules.Normalize(preferences.SubtitleCodepage);
         if (encoding == SubtitleCodepageRules.Auto) encoding = "infer";
@@ -210,6 +210,8 @@ public sealed partial class MainWindow
         var result = await new SubtitleSynchronizer(_subtitleCache).SynchronizeAsync(videoPath, sourceSubtitlePath,
             ResolveSubtitleSynchronizer(preferences.SubtitleSynchronizerPath), referenceStream, encoding, token);
         if (!isCurrent() || !PathsEqual(_selectedExternalSubtitlePath, subtitlePath)) return;
+        if (FindLoadedSubtitleId(result.Path) is { } loadedSyncedId)
+            Player.SubReload(loadedSyncedId).Invoke();
         AddSubtitle(result.Path, preferences.SubtitlesVisible, isAutomatic: true);
         if (!PathsEqual(_selectedExternalSubtitlePath, result.Path)) return;
         SaveAutomaticSubtitleSelection();
@@ -239,11 +241,25 @@ public sealed partial class MainWindow
             embeddedSubtitles.Add(new EmbeddedSubtitleTrack(
                 ReadTrackProperty(index, "codec", ""),
                 ReadTrackProperty(index, "forced", false),
-                ReadTrackProperty(index, "selected", false)));
+                ReadTrackProperty(index, "selected", false),
+                ReadTrackProperty(index, "lang", ""),
+                ReadTrackProperty(index, "title", "")));
         }
-        if (SubtitleReferenceRules.SelectEmbeddedTextSubtitle(embeddedSubtitles) is { } subtitleOrdinal)
+        if (SubtitleReferenceRules.SelectEmbeddedTextSubtitle(embeddedSubtitles, GetSelectedAudioLanguage()) is { } subtitleOrdinal)
             return $"0:s:{subtitleOrdinal}";
         return GetSelectedAudioReferenceStream();
+    }
+
+    private string? GetSelectedAudioLanguage()
+    {
+        var count = Math.Clamp(Player.GetProperty<int>("track-list/count"), 0, 256);
+        for (var index = 0; index < count; index++)
+        {
+            if (ReadTrackProperty(index, "type", "") != "audio") continue;
+            if (ReadTrackProperty(index, "selected", false))
+                return ReadTrackProperty(index, "lang", "");
+        }
+        return null;
     }
 
     private string? GetSelectedAudioReferenceStream()
@@ -321,7 +337,10 @@ public sealed partial class MainWindow
     {
         if (LocalFolderSubtitleList.SelectedItem is not ListBoxItem { Tag: string path }) return;
         LocalFolderSubtitleList.SelectedItem = null;
+        if (FindLoadedSubtitleId(path) is { } loadedId)
+            Player.SubReload(loadedId).Invoke();
         AddSubtitle(path, showInPlayer: true, isAutomatic: false);
+        SaveAutomaticSubtitleSelection();
         ShowStatusNotification($"Klasördeki '{Path.GetFileName(path)}' altyazısı yüklendi");
         RefreshSubtitlePickerContent();
     }
@@ -388,7 +407,10 @@ public sealed partial class MainWindow
             var client = new OpenSubtitlesClient(_subtitleHttpClient);
             var downloadPath = _subtitleCache.DownloadPath(videoPath, _preferences.SubtitleSearchLanguage);
             await client.DownloadAsync(candidate, downloadPath, apiKey, CancellationToken.None);
+            if (FindLoadedSubtitleId(downloadPath) is { } loadedId)
+                Player.SubReload(loadedId).Invoke();
             AddSubtitle(downloadPath, showInPlayer: true, isAutomatic: false);
+            SaveAutomaticSubtitleSelection();
             SetSubtitleAutomationStatus("Altyazı indirildi ve yüklendi.");
             ShowStatusNotification($"'{candidate.Release}' indirildi ve yüklendi");
             RefreshSubtitlePickerContent();

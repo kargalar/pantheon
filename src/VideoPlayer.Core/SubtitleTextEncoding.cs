@@ -12,6 +12,82 @@ public static partial class SubtitleTextEncoding
     public static string ResolveSynchronizationEncoding(byte[] source, string requestedEncoding) =>
         TryReadUtf8(source, out _) ? "utf-8" : requestedEncoding;
 
+    public static string DecodeSubtitleText(byte[] source, string requestedEncoding, out string resolvedEncoding)
+    {
+        if (source.Length >= 3 && source[0] == 0xEF && source[1] == 0xBB && source[2] == 0xBF)
+        {
+            resolvedEncoding = "utf-8";
+            return Encoding.UTF8.GetString(source, 3, source.Length - 3);
+        }
+
+        if (source.Length >= 2 && source[0] == 0xFF && source[1] == 0xFE)
+        {
+            resolvedEncoding = "utf-16le";
+            return Encoding.Unicode.GetString(source, 2, source.Length - 2);
+        }
+
+        if (source.Length >= 2 && source[0] == 0xFE && source[1] == 0xFF)
+        {
+            resolvedEncoding = "utf-16be";
+            return Encoding.BigEndianUnicode.GetString(source, 2, source.Length - 2);
+        }
+
+        if (TryReadUtf8(source, out var utf8Text) && utf8Text is not null)
+        {
+            resolvedEncoding = "utf-8";
+            return utf8Text;
+        }
+
+        string normalized = string.IsNullOrWhiteSpace(requestedEncoding)
+            ? SubtitleCodepageRules.Auto
+            : requestedEncoding.Trim().ToLowerInvariant();
+
+        if (normalized is not "infer" and not SubtitleCodepageRules.Auto)
+        {
+            string encodingName = normalized.StartsWith("cp", StringComparison.Ordinal)
+                ? "windows-" + normalized[2..]
+                : normalized;
+
+            try
+            {
+                var explicitEncoding = Encoding.GetEncoding(encodingName);
+                resolvedEncoding = encodingName;
+                return explicitEncoding.GetString(source);
+            }
+            catch
+            {
+                // Fall through to heuristic detection
+            }
+        }
+
+        if (LooksLikeTurkishWindows1254(source))
+        {
+            resolvedEncoding = "windows-1254";
+            return Encoding.GetEncoding(1254).GetString(source);
+        }
+
+        resolvedEncoding = "windows-1252";
+        return Encoding.GetEncoding(1252).GetString(source);
+    }
+
+    private static bool LooksLikeTurkishWindows1254(byte[] source)
+    {
+        // Turkish-specific bytes in Windows-1254:
+        // 0xFD (ı), 0xFE (ş), 0xF0 (ğ), 0xDD (İ), 0xDE (Ş), 0xD0 (Ğ), plus shared 0xE7/0xC7 (ç/Ç), 0xF6/0xD6 (ö/Ö), 0xFC/0xDC (ü/Ü)
+        int turkishSpecificCount = 0;
+        int sharedTurkishVowelCount = 0;
+
+        foreach (byte b in source)
+        {
+            if (b is 0xFD or 0xFE or 0xF0 or 0xDD or 0xDE or 0xD0)
+                turkishSpecificCount++;
+            else if (b is 0xE7 or 0xC7 or 0xF6 or 0xD6 or 0xFC or 0xDC)
+                sharedTurkishVowelCount++;
+        }
+
+        return turkishSpecificCount >= 2 || (turkishSpecificCount >= 1 && sharedTurkishVowelCount >= 2);
+    }
+
     public static bool TryRepairSynchronizedText(
         byte[] source, string synchronizedText, string codepage, out string repairedText)
     {

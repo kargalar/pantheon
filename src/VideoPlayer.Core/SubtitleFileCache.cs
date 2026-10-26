@@ -66,7 +66,7 @@ public sealed partial class SubtitleFileCache(string directory)
     public async Task<string> SynchronizationPathAsync(
         string videoPath, string subtitlePath, string referenceStream, string encoding, CancellationToken cancellationToken)
     {
-        await using var input = File.OpenRead(subtitlePath);
+        await using var input = new FileStream(subtitlePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
         var contentHash = Convert.ToHexString(await SHA256.HashDataAsync(input, cancellationToken));
         return Path.Combine(directory, CreateKey(
             $"sync-v2|{MediaStamp(videoPath)}|{contentHash}|{referenceStream}|{encoding}") + ".synced.srt");
@@ -80,7 +80,7 @@ public sealed partial class SubtitleFileCache(string directory)
 
     public static async Task<string?> ComputeMovieHashAsync(string path, CancellationToken cancellationToken)
     {
-        await using var stream = File.OpenRead(path);
+        await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
         if (stream.Length < HashBlockBytes * 2) return null;
         var buffer = new byte[HashBlockBytes];
         var hash = (ulong)stream.Length;
