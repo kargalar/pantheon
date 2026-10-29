@@ -70,6 +70,7 @@ internal readonly record struct ShortcutGesture(string Key, KeyModifiers Modifie
             "Return" => "Enter",
             "OemComma" => ",",
             "OemPeriod" => ".",
+            "Oem102" => "<",
             "Back" => "Backspace",
             _ => Key
         };
@@ -120,7 +121,7 @@ internal readonly record struct ShortcutGesture(string Key, KeyModifiers Modifie
             "oem6" => "Oem6",
             "oem7" => "Oem7",
             "oem8" => "Oem8",
-            "oem102" => "Oem102",
+            "<" or ">" or "oem102" => "Oem102",
             "multiply" => "Multiply",
             "divide" => "Divide",
             "decimal" => "Decimal",

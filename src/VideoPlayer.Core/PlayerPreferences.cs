@@ -223,7 +223,7 @@ public static class ShortcutDefaults
         [VolumeUp] = "Ctrl+Up",
         [SubtitleDelayEarlier] = "Z",
         [SubtitleDelayLater] = "X",
-        [SubtitleDelayReset] = "Ctrl+Shift+Back",
+        [SubtitleDelayReset] = "<;Shift+<;Shift+,;Ctrl+Shift+Back",
         [ToggleSettings] = "Tab",
         [ToggleMute] = "M",
         [PreviousFrame] = "Ctrl+Left",
@@ -344,7 +344,7 @@ internal static class ShortcutGestureRules
         var key = parts[^1];
         if (parts.Length > 1 && parts[..^1].Any(part => part.ToLowerInvariant() is not ("ctrl" or "control" or "alt" or "shift" or "win" or "meta")))
             return false;
-        return key is "\"" or "," or "." or "Ö" or "ö" or "Ç" or "ç"
+        return key is "\"" or "," or "." or "<" or ">" or "Ö" or "ö" or "Ç" or "ç"
             || key.Length > 0 && key.All(char.IsAsciiLetterOrDigit);
     }
 
@@ -359,6 +359,7 @@ internal static class ShortcutGestureRules
             "enter" => "Return",
             "," or "ö" => "OemComma",
             "." or "ç" => "OemPeriod",
+            "<" or ">" or "oem102" => "Oem102",
             "plus" => "OemPlus",
             "minus" => "OemMinus",
             _ => parts[^1]
@@ -498,6 +499,7 @@ public sealed class PlayerPreferencesStore(string settingsPath)
             || gesture.Equals("Ç", StringComparison.OrdinalIgnoreCase),
         ShortcutDefaults.SubtitleDelayEarlier => gesture.Equals("Ctrl+Shift+Left", StringComparison.OrdinalIgnoreCase),
         ShortcutDefaults.SubtitleDelayLater => gesture.Equals("Ctrl+Shift+Right", StringComparison.OrdinalIgnoreCase),
+        ShortcutDefaults.SubtitleDelayReset => gesture.Equals("Ctrl+Shift+Back", StringComparison.OrdinalIgnoreCase),
         _ => false
     };
 

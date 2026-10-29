@@ -18,6 +18,9 @@ public sealed class ShortcutGestureTests
     [InlineData("OemPeriod", ".")]
     [InlineData(",", ",")]
     [InlineData(".", ".")]
+    [InlineData("Oem102", "<")]
+    [InlineData("<", "<")]
+    [InlineData(">", "<")]
     public void TryParse_NormalizesValidGestures(string input, string expected)
     {
         Assert.True(ShortcutGesture.TryParse(input, out var gesture));
@@ -32,6 +35,7 @@ public sealed class ShortcutGestureTests
     [InlineData(0xBD, "Minus")]
     [InlineData(0xBC, ",")]
     [InlineData(0xBE, ".")]
+    [InlineData(0xE2, "<")]
     public void TryFromVirtualKey_UsesSameNamesAsSettings(int virtualKey, string expected)
     {
         Assert.True(ShortcutGesture.TryFromVirtualKey(virtualKey, KeyModifiers.None, out var gesture));
@@ -44,6 +48,7 @@ public sealed class ShortcutGestureTests
     [InlineData(Key.Right, "Right")]
     [InlineData(Key.S, "S")]
     [InlineData(Key.OemPlus, "Plus")]
+    [InlineData(Key.Oem102, "<")]
     public void TryFromAvalonia_UsesSameNamesAsWindowsHook(Key key, string expected)
     {
         Assert.True(ShortcutGesture.TryFromAvalonia(key, KeyModifiers.None, out var gesture));

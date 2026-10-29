@@ -99,6 +99,10 @@ public sealed partial class MainWindow : Window
     private long _lastDisplayedPositionSecond = long.MinValue;
     private long _lastDisplayedDurationSecond = long.MinValue;
     private double _lastDisplayedPlaybackSpeed = double.NaN;
+    private bool _lastDisplayedTimeLabelHovered;
+    private bool _isTimeLabelHovered;
+    private double _lastPlaybackPosition;
+    private double _lastPlaybackDuration;
     private PlaybackProgress? _pendingResume;
     private double? _pendingResumeStartPositionSeconds;
     private double? _pendingResumeTargetPositionSeconds;
@@ -230,6 +234,8 @@ public sealed partial class MainWindow : Window
             if (index >= 0) PlayQueuedVideo(index);
         };
         PlayButton.Click += (_, _) => TogglePlayback();
+        TimeLabel.PointerEntered += OnTimeLabelPointerEntered;
+        TimeLabel.PointerExited += OnTimeLabelPointerExited;
         SubtitleButton.Click += (_, _) => ToggleSubtitlePicker();
         AudioTrackButton.Click += (_, _) => ToggleAudioTrackPicker();
         InitializeSubtitleAutomation();
@@ -1260,19 +1266,47 @@ public sealed partial class MainWindow : Window
     private void UpdatePlaybackPollingInterval() =>
         _progressTimer.Interval = PlaybackPollingRules.GetInterval(_isPlaying, _isDraggingSeek);
 
+    private void OnTimeLabelPointerEntered(object? sender, PointerEventArgs e)
+    {
+        _isTimeLabelHovered = true;
+        UpdatePlaybackTimeDisplay(_lastPlaybackPosition, _lastPlaybackDuration);
+    }
+
+    private void OnTimeLabelPointerExited(object? sender, PointerEventArgs e)
+    {
+        _isTimeLabelHovered = false;
+        UpdatePlaybackTimeDisplay(_lastPlaybackPosition, _lastPlaybackDuration);
+    }
+
     private void UpdatePlaybackTimeDisplay(double position, double duration)
     {
-        var positionSecond = MediaTimeFormatter.GetPlaybackSecond(position, _playbackSpeed);
-        var durationSecond = MediaTimeFormatter.GetPlaybackSecond(duration, _playbackSpeed);
+        _lastPlaybackPosition = position;
+        _lastPlaybackDuration = duration;
+
+        var displaySpeed = _isTimeLabelHovered ? 1.0 : _playbackSpeed;
+        var positionSecond = MediaTimeFormatter.GetPlaybackSecond(position, displaySpeed);
+        var durationSecond = MediaTimeFormatter.GetPlaybackSecond(duration, displaySpeed);
         if (positionSecond == _lastDisplayedPositionSecond
             && durationSecond == _lastDisplayedDurationSecond
-            && _playbackSpeed == _lastDisplayedPlaybackSpeed) return;
+            && displaySpeed == _lastDisplayedPlaybackSpeed
+            && _isTimeLabelHovered == _lastDisplayedTimeLabelHovered) return;
 
-        TimeLabel.Text = $"{MediaTimeFormatter.FormatPlaybackTime(position, _playbackSpeed)} / {MediaTimeFormatter.FormatPlaybackTime(duration, _playbackSpeed)}";
-        ToolTip.SetTip(TimeLabel, UiText.CurrentTimeTotalDuration);
+        TimeLabel.Text = $"{MediaTimeFormatter.FormatPlaybackTime(position, displaySpeed)} / {MediaTimeFormatter.FormatPlaybackTime(duration, displaySpeed)}";
+
+        if (Math.Abs(_playbackSpeed - 1.0) > 0.001)
+        {
+            var originalTime = $"{MediaTimeFormatter.FormatPlaybackTime(position, 1.0)} / {MediaTimeFormatter.FormatPlaybackTime(duration, 1.0)}";
+            ToolTip.SetTip(TimeLabel, $"{UiText.OriginalDuration}: {originalTime}");
+        }
+        else
+        {
+            ToolTip.SetTip(TimeLabel, UiText.CurrentTimeTotalDuration);
+        }
+
         _lastDisplayedPositionSecond = positionSecond;
         _lastDisplayedDurationSecond = durationSecond;
-        _lastDisplayedPlaybackSpeed = _playbackSpeed;
+        _lastDisplayedPlaybackSpeed = displaySpeed;
+        _lastDisplayedTimeLabelHovered = _isTimeLabelHovered;
     }
 
     private void LogActiveVideoDecoder()

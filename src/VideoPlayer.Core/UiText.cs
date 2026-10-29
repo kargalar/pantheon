@@ -157,6 +157,7 @@ public static class UiText
     public const string OpenSubtitlesRequestFailedFormat = "OpenSubtitles request failed (HTTP {0}).";
     public const string OpenVideo = "Open video";
     public const string OpenVideoOrPlaylist = "Open video or playlist";
+    public const string OriginalDuration = "Original duration";
     public const string PREFERENCES = "PREFERENCES";
     public const string PantheonLogsErrorsAndUnexpectedApplicationEventsA = "Pantheon logs errors and unexpected application events. A separate log file is created each day.";
     public const string PantheonSettings = "Pantheon settings";

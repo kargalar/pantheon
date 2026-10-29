@@ -20,6 +20,8 @@ public sealed class ShortcutBindingRulesTests
         Assert.Equal(ShortcutDefaults.CaptureFrame, ShortcutBindingRules.FindAction(bindings, "S"));
         Assert.Equal(ShortcutDefaults.ToggleSettings, ShortcutBindingRules.FindAction(bindings, "Tab"));
         Assert.Equal(ShortcutDefaults.SubtitleDelayReset, ShortcutBindingRules.FindAction(bindings, "Ctrl+Shift+Backspace"));
+        Assert.Equal(ShortcutDefaults.SubtitleDelayReset, ShortcutBindingRules.FindAction(bindings, "<"));
+        Assert.Equal(ShortcutDefaults.SubtitleDelayReset, ShortcutBindingRules.FindAction(bindings, "Oem102"));
         Assert.Equal(ShortcutDefaults.ToggleSubtitles, ShortcutBindingRules.FindAction(bindings, "C"));
         Assert.Equal(ShortcutDefaults.ToggleMute, ShortcutBindingRules.FindAction(bindings, "M"));
         Assert.Equal(ShortcutDefaults.PreviousFrame, ShortcutBindingRules.FindAction(bindings, "Ctrl+Left"));
@@ -27,8 +29,13 @@ public sealed class ShortcutBindingRulesTests
         Assert.Equal(ShortcutDefaults.PreviousChapter, ShortcutBindingRules.FindAction(bindings, "Ctrl+PageUp"));
         Assert.Equal(ShortcutDefaults.NextChapter, ShortcutBindingRules.FindAction(bindings, "Ctrl+PageDown"));
         Assert.Equal(ShortcutDefaults.ToggleFullscreen, ShortcutBindingRules.FindAction(bindings, "Enter"));
-        Assert.Equal(ShortcutDefaults.PreviousFrame, ShortcutBindingRules.FindAction(bindings, "Ö"));
-        Assert.Equal(ShortcutDefaults.NextFrame, ShortcutBindingRules.FindAction(bindings, "Ç"));
+        var commaBindings = new Dictionary<string, string>(bindings)
+        {
+            [ShortcutDefaults.PreviousFrame] = "OemComma",
+            [ShortcutDefaults.NextFrame] = "OemPeriod"
+        };
+        Assert.Equal(ShortcutDefaults.PreviousFrame, ShortcutBindingRules.FindAction(commaBindings, "Ö"));
+        Assert.Equal(ShortcutDefaults.NextFrame, ShortcutBindingRules.FindAction(commaBindings, "Ç"));
     }
 
     [Fact]
