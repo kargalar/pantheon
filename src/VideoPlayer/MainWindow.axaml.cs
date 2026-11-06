@@ -239,6 +239,7 @@ public sealed partial class MainWindow : Window
         SubtitleButton.Click += (_, _) => ToggleSubtitlePicker();
         AudioTrackButton.Click += (_, _) => ToggleAudioTrackPicker();
         InitializeSubtitleAutomation();
+        InitializeVocabulary();
         AudioTrackList.SelectionChanged += (_, _) => OnAudioTrackSelectionChanged();
         SubtitleTrackList.SelectionChanged += (_, _) => OnSubtitleTrackSelectionChanged();
         AudioTrackPickerPopup.Closed += (_, _) => UpdateControlVisibility();
@@ -369,6 +370,7 @@ public sealed partial class MainWindow : Window
         Player.SetProperty("sub-align-x", SubtitleAppearanceRules.NormalizeHorizontalAlignment(_preferences.SubtitleHorizontalAlignment));
         Player.SetProperty("sub-margin-y", (long)_preferences.SubtitleMargin);
         Player.SetProperty("sub-ass-override", "force");
+        ApplyNativeSubtitleOverride();
     }
 
     private void ApplySubtitleCodepage()
@@ -856,6 +858,7 @@ public sealed partial class MainWindow : Window
     private void TogglePlayback()
     {
         if (_currentVideo is null) return;
+        _hoverPaused = false;
         _isPlaying = !_isPlaying;
         Player.SetProperty("pause", !_isPlaying);
         UpdatePlaybackButton();
@@ -2459,6 +2462,7 @@ public sealed partial class MainWindow : Window
     private void OnRootPointerMoved(object? sender, PointerEventArgs e)
     {
         if (!IsPointerFromMainWindow(e)) return;
+        UpdateWordHoverFromPointer(e);
         ResetCursorHideTimer();
         var position = e.GetPosition(RootPanel);
         var pointerWithinWindow = position.X >= 0 && position.X <= RootPanel.Bounds.Width
@@ -2482,6 +2486,11 @@ public sealed partial class MainWindow : Window
         ResetCursorHideTimer();
         if (e is PointerPressedEventArgs pressed)
         {
+            if (TryClickWord(pressed))
+            {
+                pressed.Handled = true;
+                return;
+            }
             if (SubtitlePickerPopup.IsOpen && !SubtitleButton.IsPointerOver)
                 SubtitlePickerPopup.IsOpen = false;
 

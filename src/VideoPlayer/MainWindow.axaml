@@ -44,6 +44,8 @@
           <TextBlock Text="{x:Static core:UiText.DropAVideoHere}" FontSize="18" FontWeight="SemiBold" Foreground="#F2F2F2" HorizontalAlignment="Center" />
           <TextBlock Text="{x:Static core:UiText.DropASubtitleFileWhileAVideoIs}" FontSize="13" Foreground="#999999" HorizontalAlignment="Center" />
         </StackPanel>
+        <Border x:Name="InteractiveSubtitleHost" IsVisible="False" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                Background="Transparent" CornerRadius="10" Padding="12,4" />
         <Border x:Name="DropOverlay" IsVisible="False" Background="#B0141414" CornerRadius="18">
           <TextBlock x:Name="DropOverlayText" Text="{x:Static core:UiText.DropAVideoOrSubtitleFile}" FontSize="18" Foreground="#F2F2F2" HorizontalAlignment="Center" VerticalAlignment="Center" />
         </Border>
@@ -72,6 +74,34 @@
             <TextBlock x:Name="StatusNotificationText" Text="" FontSize="13" FontWeight="SemiBold" Foreground="#F2F2F2" VerticalAlignment="Center" />
           </StackPanel>
         </Border>
+        <Canvas x:Name="WordCardLayer" IsHitTestVisible="False" ClipToBounds="True">
+          <Border x:Name="WordCard" IsVisible="False" Opacity="0" MinWidth="190" MaxWidth="380"
+                  Background="#F2151515" BorderBrush="#454545" BorderThickness="1" CornerRadius="16" Padding="16,13">
+            <Border.Transitions>
+              <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.14" />
+              </Transitions>
+            </Border.Transitions>
+            <Border.Effect>
+              <DropShadowEffect BlurRadius="28" OffsetX="0" OffsetY="8" Color="#000000" Opacity="0.55" />
+            </Border.Effect>
+            <StackPanel Spacing="7">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <TextBlock x:Name="WordCardWord" FontSize="13" FontWeight="SemiBold" Foreground="#FFD54A" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                <Border x:Name="WordCardBadge" Grid.Column="1" CornerRadius="8" Padding="7,2" Background="#33FFD54A" IsVisible="False" VerticalAlignment="Center">
+                  <TextBlock x:Name="WordCardBadgeText" FontSize="10" FontWeight="Bold" Foreground="#FFD54A" />
+                </Border>
+              </Grid>
+              <TextBlock x:Name="WordCardTranslation" FontSize="22" FontWeight="SemiBold" Foreground="#F5F5F5" TextWrapping="Wrap" />
+              <TextBlock x:Name="WordCardAlternatives" FontSize="12" Foreground="#A7A7A7" TextWrapping="Wrap" IsVisible="False" />
+              <Border x:Name="WordCardSentenceBox" Background="#1F1F1F" CornerRadius="8" Padding="9,7" IsVisible="False">
+                <TextBlock x:Name="WordCardSentence" FontSize="12" FontStyle="Italic" Foreground="#C9C9C9" TextWrapping="Wrap" />
+              </Border>
+              <Border Height="1" Background="#2D2D2D" />
+              <TextBlock x:Name="WordCardHint" FontSize="11" Foreground="#858585" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+        </Canvas>
       </Grid>
     </Border>
 
@@ -144,7 +174,7 @@
           IsVisible="False" Opacity="0">
       <Border Background="#E6191919" BorderBrush="#383838" BorderThickness="1" CornerRadius="16" Padding="14,3,14,4" ClipToBounds="True">
         <Grid>
-          <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6" VerticalAlignment="Center">
+          <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6" VerticalAlignment="Center">
             <Button x:Name="PlayButton" Content="&#x25B6;" Width="36" Height="36" Padding="0" ToolTip.Tip="{x:Static core:UiText.PlayOrPause}" AutomationProperties.Name="{x:Static core:UiText.Play}" Background="{DynamicResource AccentBrush}" BorderBrush="{DynamicResource AccentBrush}" />
             <TextBlock x:Name="TimeLabel" Grid.Column="1" Text="00:00 / 00:00" Foreground="#C4C4C4" FontSize="12" VerticalAlignment="Center" Margin="8,0" Background="Transparent" />
             <TextBlock x:Name="SpeedLabel" Grid.Column="2" Text="1.00&#215;" Foreground="#A7A7A7" FontSize="12" VerticalAlignment="Center" Margin="4,0" />
@@ -179,7 +209,8 @@
             </Grid>
             <Button x:Name="AudioTrackButton" Grid.Column="6" Content="🔊" Width="36" Height="36" Padding="0" FontSize="16" ToolTip.Tip="{x:Static core:UiText.SelectAudioTrack}" AutomationProperties.Name="{x:Static core:UiText.AudioTrack}" IsVisible="False" />
             <Button x:Name="SubtitleButton" Grid.Column="7" Content="CC" Width="36" Height="36" Padding="0" FontSize="12" FontWeight="Bold" ToolTip.Tip="{x:Static core:UiText.ShowOrHideSubtitles}" AutomationProperties.Name="{x:Static core:UiText.ShowSubtitles}" />
-            <Button x:Name="HardwareAccelerationButton" Grid.Column="8" Content="&#x25A6;" Width="36" Height="36" Padding="0" FontSize="17" ToolTip.Tip="{x:Static core:UiText.ToggleHardwareAcceleration}" AutomationProperties.Name="{x:Static core:UiText.EnableHardwareAcceleration}" />
+            <Button x:Name="VocabularyButton" Grid.Column="8" Content="📖" Width="36" Height="36" Padding="0" FontSize="15" ToolTip.Tip="Bilinmeyen kelimeler listesi" AutomationProperties.Name="Bilinmeyen kelimeler listesi" />
+            <Button x:Name="HardwareAccelerationButton" Grid.Column="9" Content="&#x25A6;" Width="36" Height="36" Padding="0" FontSize="17" ToolTip.Tip="{x:Static core:UiText.ToggleHardwareAcceleration}" AutomationProperties.Name="{x:Static core:UiText.EnableHardwareAcceleration}" />
           </Grid>
           <Popup x:Name="AudioTrackPickerPopup" PlacementTarget="{Binding #AudioTrackButton}" Placement="Top" IsOpen="False" IsLightDismissEnabled="True">
             <Border Background="#181818" BorderBrush="#383838" BorderThickness="1" CornerRadius="12" Padding="12" Width="300" MaxHeight="260">
@@ -243,6 +274,15 @@
                     <Button x:Name="SynchronizeSubtitleButton" Content="Otomatik Altyazı Senkronizasyonu" HorizontalAlignment="Stretch" />
                     <TextBlock x:Name="SubtitleSyncStatus" IsVisible="False" TextWrapping="Wrap"
                                Foreground="#00BC7D" FontSize="11" Margin="2,0" />
+                  </StackPanel>
+
+                  <Border Height="1" Background="#2D2D2D" />
+
+                  <!-- Kelime çevirisi -->
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="Kelime Çevirisi" FontSize="12" FontWeight="SemiBold" Foreground="#A7A7A7" />
+                    <CheckBox x:Name="InteractiveSubtitlesCheckBox" Content="Etkileşimli altyazı (üzerine gel: çeviri, tıkla: listeye ekle)" FontSize="11" Margin="2,0" />
+                    <Button x:Name="OpenVocabularyButton" Content="Bilinmeyen Kelimeler Listesi" HorizontalAlignment="Stretch" />
                   </StackPanel>
 
                   <Border Height="1" Background="#2D2D2D" />
