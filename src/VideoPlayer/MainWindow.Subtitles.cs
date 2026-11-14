@@ -142,8 +142,8 @@ public sealed partial class MainWindow
     private void UpdateSubtitlePickerSize()
     {
         if (SubtitlePickerContent is null) return;
-        var width = Bounds.Width > 0 ? Math.Clamp(Bounds.Width - 36, 360, 700) : 700;
-        var maxHeight = Bounds.Height > 0 ? Math.Clamp(Bounds.Height - 130, 320, 580) : 580;
+        var width = Bounds.Width > 0 ? Math.Clamp(Bounds.Width - 36, 360, 720) : 720;
+        var maxHeight = Bounds.Height > 0 ? Math.Clamp(Bounds.Height - 105, 340, 740) : 740;
         SubtitlePickerContent.Width = width;
         SubtitlePickerContent.MaxHeight = maxHeight;
     }
@@ -473,10 +473,12 @@ public sealed partial class MainWindow
                 ToolTip.SetTip(item, fileName);
                 LocalFolderSubtitleList.Items.Add(item);
             }
+            LocalFolderSubtitleList.IsVisible = localFiles.Count > 0;
             NoLocalSubtitlesNotice.IsVisible = localFiles.Count == 0;
         }
         else
         {
+            LocalFolderSubtitleList.IsVisible = false;
             NoLocalSubtitlesNotice.IsVisible = true;
         }
         NoSubtitlesNotice.IsVisible = SubtitleTrackList.Items.Count <= 1;
