@@ -29,7 +29,7 @@ public sealed partial class MainWindow
     private WordChip? _hoverChip;
     private CancellationTokenSource? _hoverCancellation;
     private WordTranslation? _hoverTranslation;
-    private string? _hoverSentence;
+    private CancellationTokenSource? _sentenceCancellation;
     private string _overlayText = "";
     private bool _hoverPaused;
     private bool _appliedInteractive;
@@ -75,6 +75,7 @@ public sealed partial class MainWindow
             _subtitleWordTimer.Stop();
             _wordHoverLeaveTimer.Stop();
             _hoverCancellation?.Cancel();
+            CloseSentenceCard();
             _vocabularyWindow?.Close();
             _vocabulary.FlushIfDirty();
             _translationHttpClient?.Dispose();
@@ -147,6 +148,7 @@ public sealed partial class MainWindow
         if (text == _overlayText) return;
 
         EndWordHover();
+        CloseSentenceCard();
         _overlayText = text;
         RenderSubtitleOverlay();
         foreach (var key in _wordChips.Select(chip => chip.Key).Distinct())
@@ -156,6 +158,7 @@ public sealed partial class MainWindow
     private void ClearSubtitleOverlay()
     {
         EndWordHover();
+        CloseSentenceCard();
         _overlayText = "";
         _wordChips.Clear();
         InteractiveSubtitleHost.Child = null;
@@ -247,6 +250,12 @@ public sealed partial class MainWindow
         host.IsVisible = true;
     }
 
+    private bool HitTestSubtitle(Point rootPoint)
+    {
+        if (InteractiveSubtitleHost.TranslatePoint(new Point(0, 0), RootPanel) is not { } origin) return false;
+        return new Rect(origin, InteractiveSubtitleHost.Bounds.Size).Contains(rootPoint);
+    }
+
     private WordChip? HitTestWordChip(Point rootPoint)
     {
         foreach (var chip in _wordChips)
@@ -260,7 +269,7 @@ public sealed partial class MainWindow
 
     private void UpdateWordHoverFromPointer(PointerEventArgs e)
     {
-        if (!_vocabulary.Settings.Enabled || !InteractiveSubtitleHost.IsVisible) return;
+        if (!_vocabulary.Settings.Enabled || !InteractiveSubtitleHost.IsVisible || SentenceCard.IsVisible) return;
         var chip = HitTestWordChip(e.GetPosition(RootPanel));
         if (chip is not null)
         {
@@ -322,7 +331,6 @@ public sealed partial class MainWindow
         if (_hoverChip is not null) ApplyChipVisual(_hoverChip, hovered: false);
         _hoverChip = null;
         _hoverTranslation = null;
-        _hoverSentence = null;
         WordCard.Opacity = 0;
         WordCard.IsVisible = false;
         if (!_hoverPaused) return;
@@ -342,7 +350,6 @@ public sealed partial class MainWindow
     {
         var settings = _vocabulary.Settings;
         _hoverTranslation = null;
-        _hoverSentence = null;
         if (_vocabulary.Get(chip.Key) is { Translation.Length: > 0 } saved)
         {
             _hoverTranslation = new WordTranslation(saved.Translation, saved.Alternatives, "");
@@ -366,14 +373,6 @@ public sealed partial class MainWindow
                 UpdateWordCard(chip, loading: false, failed: false);
             }
 
-            if (settings.ShowSentenceTranslation && _overlayText.Length > 0)
-            {
-                var sentence = string.Join(' ', _overlayText.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
-                var translated = await _wordTranslator!.TranslateSentenceAsync(sentence, settings.TargetLanguage, token);
-                if (token.IsCancellationRequested) return;
-                _hoverSentence = translated;
-                UpdateWordCard(chip, loading: false, failed: false);
-            }
         }
         catch (Exception exception) when (!token.IsCancellationRequested
             && exception is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
@@ -381,6 +380,60 @@ public sealed partial class MainWindow
             if (_hoverTranslation is null) UpdateWordCard(chip, loading: false, failed: true);
         }
         catch (OperationCanceledException) { }
+    }
+
+    private void CloseSentenceCard()
+    {
+        _sentenceCancellation?.Cancel();
+        _sentenceCancellation?.Dispose();
+        _sentenceCancellation = null;
+        SentenceCard.IsVisible = false;
+    }
+
+    private void ShowSentenceCard(Point rootPoint)
+    {
+        CloseSentenceCard();
+        var sentence = string.Join(' ', _overlayText.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        if (sentence.Length == 0) return;
+        EndWordHover();
+        SentenceCardText.Text = sentence;
+        SentenceCardTranslation.IsVisible = true;
+        SentenceCardTranslation.Text = "Çevriliyor…";
+        var point = RootPanel.TranslatePoint(rootPoint, WordCardLayer) ?? rootPoint;
+        SentenceCard.IsVisible = true;
+        PositionSentenceCard(point);
+        _sentenceCancellation = new CancellationTokenSource();
+        _ = TranslateSentenceCardAsync(sentence, point, _sentenceCancellation.Token);
+    }
+
+    private void PositionSentenceCard(Point point)
+    {
+        var width = Math.Max(0, Math.Min(380, WordCardLayer.Bounds.Width - 16));
+        SentenceCard.Width = width;
+        SentenceCard.Measure(new Size(width, double.PositiveInfinity));
+        Canvas.SetLeft(SentenceCard, Math.Clamp(point.X - width / 2, 8, Math.Max(8, WordCardLayer.Bounds.Width - width - 8)));
+        Canvas.SetTop(SentenceCard, Math.Max(8, point.Y - SentenceCard.DesiredSize.Height - 12));
+    }
+
+    private async Task TranslateSentenceCardAsync(string sentence, Point point, CancellationToken token)
+    {
+        try
+        {
+            var translated = await _wordTranslator!.TranslateSentenceAsync(sentence, _vocabulary.Settings.TargetLanguage, token);
+            if (!token.IsCancellationRequested)
+            {
+                SentenceCardTranslation.Text = translated;
+                PositionSentenceCard(point);
+            }
+        }
+        catch (Exception exception) when (exception is HttpRequestException or OperationCanceledException or System.Text.Json.JsonException)
+        {
+            if (!token.IsCancellationRequested)
+            {
+                SentenceCardTranslation.Text = "Çeviri alınamadı";
+                PositionSentenceCard(point);
+            }
+        }
     }
 
     private void UpdateWordCard(WordChip chip, bool loading, bool failed)
@@ -396,8 +449,6 @@ public sealed partial class MainWindow
         var alternatives = _hoverTranslation?.Alternatives ?? [];
         WordCardAlternatives.IsVisible = alternatives.Count > 0;
         WordCardAlternatives.Text = string.Join("\n", alternatives);
-        WordCardSentenceBox.IsVisible = !string.IsNullOrEmpty(_hoverSentence);
-        WordCardSentence.Text = _hoverSentence ?? "";
         WordCardBadge.IsVisible = listed;
         WordCardBadgeText.Text = "★ LİSTEDE";
         WordCardHint.Text = failed ? "İnternet bağlantını kontrol et. Yine de tıklayarak listeye ekleyebilirsin."

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Avalonia.Controls;
 using Avalonia.Media;
 using HanumanInstitute.LibMpv;
@@ -15,6 +16,7 @@ public sealed partial class MainWindow
     private bool _subtitleMediaReady;
     private long _subtitleOperationRevision;
     private string _subtitleAutomationStatus = "";
+    private bool _updatingSubtitlePickerControls;
 
     private void RepairSynchronizedSubtitleEncoding(string path, string codepage)
     {
@@ -28,12 +30,69 @@ public sealed partial class MainWindow
     private void InitializeSubtitleAutomation()
     {
         CloseSubtitlePopupButton.Click += (_, _) => SubtitlePickerPopup.IsOpen = false;
+        ToggleSubtitlesVisibilityButton.Click += (_, _) =>
+        {
+            ToggleSubtitles();
+            RefreshSubtitlePickerContent();
+        };
+        SubtitleDelayEarlierButton.Click += (_, _) =>
+        {
+            AdjustSubtitleDelay(-1);
+            RefreshSubtitlePickerContent();
+        };
+        SubtitleDelayLaterButton.Click += (_, _) =>
+        {
+            AdjustSubtitleDelay(1);
+            RefreshSubtitlePickerContent();
+        };
+        SubtitleDelayResetButton.Click += (_, _) =>
+        {
+            ResetSubtitleDelay();
+            RefreshSubtitlePickerContent();
+        };
+        SubtitleFontSmallerButton.Click += (_, _) => AdjustSubtitleFontSize(-2);
+        SubtitleFontLargerButton.Click += (_, _) => AdjustSubtitleFontSize(2);
+
+        foreach (var option in SubtitleCodepageRules.Options)
+        {
+            SubtitleCodepageSelector.Items.Add(new ComboBoxItem { Content = option.Label, Tag = option.Codepage });
+        }
+        SubtitleCodepageSelector.SelectionChanged += (_, _) =>
+        {
+            if (_updatingSubtitlePickerControls || SubtitleCodepageSelector.SelectedItem is not ComboBoxItem { Tag: string codepage })
+                return;
+            if (string.Equals(_preferences.SubtitleCodepage, codepage, StringComparison.OrdinalIgnoreCase)) return;
+            SavePreferences(_preferences with { SubtitleCodepage = codepage });
+            ApplySubtitleCodepage();
+        };
+
+        foreach (var (label, code) in SubtitleAutomationOptions.Languages)
+        {
+            SubtitleSearchLanguageSelector.Items.Add(new ComboBoxItem { Content = label, Tag = code });
+        }
+        SubtitleSearchLanguageSelector.SelectionChanged += (_, _) =>
+        {
+            if (_updatingSubtitlePickerControls || SubtitleSearchLanguageSelector.SelectedItem is not ComboBoxItem { Tag: string language })
+                return;
+            if (string.Equals(_preferences.SubtitleSearchLanguage, language, StringComparison.OrdinalIgnoreCase)) return;
+            SavePreferences(_preferences with { SubtitleSearchLanguage = language });
+        };
+
         AutoFindSubtitlesCheckBox.IsChecked = _preferences.AutoFindSubtitles;
         AutoFindSubtitlesCheckBox.IsCheckedChanged += (_, _) =>
         {
+            if (_updatingSubtitlePickerControls) return;
             var isChecked = AutoFindSubtitlesCheckBox.IsChecked == true;
             if (_preferences.AutoFindSubtitles != isChecked)
                 SavePreferences(_preferences with { AutoFindSubtitles = isChecked });
+        };
+        AutoSynchronizeSubtitlesCheckBox.IsChecked = _preferences.AutoSynchronizeSubtitles;
+        AutoSynchronizeSubtitlesCheckBox.IsCheckedChanged += (_, _) =>
+        {
+            if (_updatingSubtitlePickerControls) return;
+            var isChecked = AutoSynchronizeSubtitlesCheckBox.IsChecked == true;
+            if (_preferences.AutoSynchronizeSubtitles != isChecked)
+                SavePreferences(_preferences with { AutoSynchronizeSubtitles = isChecked });
         };
         FindSubtitleButton.Click += (_, _) =>
         {
@@ -66,6 +125,27 @@ public sealed partial class MainWindow
                 catch (MpvException) { /* The next load can replace the file before this UI callback runs. */ }
             });
         };
+    }
+
+    private void AdjustSubtitleFontSize(int delta)
+    {
+        var nextSize = Math.Clamp(
+            _preferences.SubtitleFontSize + delta,
+            PlayerPreferences.MinimumSubtitleFontSize,
+            PlayerPreferences.MaximumSubtitleFontSize);
+        if (nextSize == _preferences.SubtitleFontSize) return;
+        SavePreferences(_preferences with { SubtitleFontSize = nextSize });
+        ApplySubtitleAppearancePreferences();
+        RefreshSubtitlePickerContent();
+    }
+
+    private void UpdateSubtitlePickerSize()
+    {
+        if (SubtitlePickerContent is null) return;
+        var width = Bounds.Width > 0 ? Math.Clamp(Bounds.Width - 36, 360, 700) : 700;
+        var maxHeight = Bounds.Height > 0 ? Math.Clamp(Bounds.Height - 130, 320, 580) : 580;
+        SubtitlePickerContent.Width = width;
+        SubtitlePickerContent.MaxHeight = maxHeight;
     }
 
     private void CancelSubtitleAutomation()
@@ -290,12 +370,10 @@ public sealed partial class MainWindow
     {
         _subtitleAutomationStatus = status;
         SubtitleAutomationStatus.Text = status;
-        SubtitleAutomationStatus.IsVisible = !string.IsNullOrEmpty(status);
-        if (SubtitleSyncStatus is not null)
-        {
-            SubtitleSyncStatus.Text = status;
-            SubtitleSyncStatus.IsVisible = !string.IsNullOrEmpty(status);
-        }
+        var hasStatus = !string.IsNullOrEmpty(status);
+        SubtitleAutomationStatus.IsVisible = hasStatus;
+        if (SubtitleAutomationStatusBanner is not null)
+            SubtitleAutomationStatusBanner.IsVisible = hasStatus;
         UpdateSubtitleDelayTooltip();
     }
 
@@ -305,31 +383,102 @@ public sealed partial class MainWindow
                 ?? Environment.GetEnvironmentVariable("PANTEON_OPENSUBTITLES_API_KEY")
             : _preferences.OpenSubtitlesApiKey;
 
+    private static void SelectComboBoxByTag(ComboBox comboBox, string value)
+    {
+        foreach (var obj in comboBox.Items)
+        {
+            if (obj is ComboBoxItem { Tag: string tag } item && string.Equals(tag, value, StringComparison.OrdinalIgnoreCase))
+            {
+                comboBox.SelectedItem = item;
+                return;
+            }
+        }
+    }
+
+    private string BuildActiveSubtitleSummary()
+    {
+        if (_currentVideo is null) return "Video açık değil";
+        if (!_preferences.SubtitlesVisible) return "Altyazı gizli";
+        if (_selectedExternalSubtitlePath is { } externalPath)
+            return $"Aktif: {Path.GetFileName(externalPath)}";
+        if (SubtitleTrackList.SelectedItem is ListBoxItem { Tag: MediaTrackOption track })
+            return $"Aktif: {track.Label}";
+        return "Aktif altyazı yok";
+    }
+
     private void RefreshSubtitlePickerContent()
     {
-        if (_currentVideo is not { } videoPath) return;
+        UpdateSubtitlePickerSize();
 
-        if (AutoFindSubtitlesCheckBox is not null && AutoFindSubtitlesCheckBox.IsChecked != _preferences.AutoFindSubtitles)
-            AutoFindSubtitlesCheckBox.IsChecked = _preferences.AutoFindSubtitles;
-
-        FindSubtitleButton.IsEnabled = true;
-        SynchronizeSubtitleButton.IsEnabled = true;
-        var localFiles = MediaPathRules.FindAllSubtitlesBesideVideo(videoPath);
-        LocalFolderSubtitleList.Items.Clear();
-        foreach (var file in localFiles)
+        _updatingSubtitlePickerControls = true;
+        try
         {
-            var fileName = Path.GetFileName(file);
-            var isLoaded = _loadedSubtitles.Contains(Path.GetFullPath(file))
-                || PathsEqual(_selectedExternalSubtitlePath, file);
-            var item = new ListBoxItem
-            {
-                Content = isLoaded ? $"✓ {fileName} (Aktif)" : fileName,
-                Tag = file,
-                Foreground = isLoaded ? Brush.Parse("#00BC7D") : Brush.Parse("#F2F2F2")
-            };
-            LocalFolderSubtitleList.Items.Add(item);
+            if (AutoFindSubtitlesCheckBox is not null && AutoFindSubtitlesCheckBox.IsChecked != _preferences.AutoFindSubtitles)
+                AutoFindSubtitlesCheckBox.IsChecked = _preferences.AutoFindSubtitles;
+            if (AutoSynchronizeSubtitlesCheckBox is not null && AutoSynchronizeSubtitlesCheckBox.IsChecked != _preferences.AutoSynchronizeSubtitles)
+                AutoSynchronizeSubtitlesCheckBox.IsChecked = _preferences.AutoSynchronizeSubtitles;
+            if (SubtitleCodepageSelector is not null)
+                SelectComboBoxByTag(SubtitleCodepageSelector, _preferences.SubtitleCodepage);
+            if (SubtitleSearchLanguageSelector is not null)
+                SelectComboBoxByTag(SubtitleSearchLanguageSelector, _preferences.SubtitleSearchLanguage);
         }
-        NoLocalSubtitlesNotice.IsVisible = localFiles.Count == 0;
+        finally
+        {
+            _updatingSubtitlePickerControls = false;
+        }
+
+        if (ActiveSubtitleSummaryLabel is not null)
+            ActiveSubtitleSummaryLabel.Text = BuildActiveSubtitleSummary();
+        if (ToggleSubtitlesVisibilityButton is not null)
+        {
+            ToggleSubtitlesVisibilityButton.Content = _preferences.SubtitlesVisible ? "Altyazı: Açık" : "Altyazı: Gizli";
+            ToggleSubtitlesVisibilityButton.Foreground = _preferences.SubtitlesVisible
+                ? Brush.Parse("#00BC7D")
+                : Brush.Parse("#A7A7A7");
+        }
+        if (SubtitleDelayValueLabel is not null)
+            SubtitleDelayValueLabel.Text = $"{_subtitleDelaySeconds.ToString("+0.00;-0.00;0.00", CultureInfo.InvariantCulture)} sn";
+        if (SubtitleFontSizeLabel is not null)
+            SubtitleFontSizeLabel.Text = $"{_preferences.SubtitleFontSize} px";
+        if (SubtitleFontSmallerButton is not null)
+            SubtitleFontSmallerButton.IsEnabled = _preferences.SubtitleFontSize > PlayerPreferences.MinimumSubtitleFontSize;
+        if (SubtitleFontLargerButton is not null)
+            SubtitleFontLargerButton.IsEnabled = _preferences.SubtitleFontSize < PlayerPreferences.MaximumSubtitleFontSize;
+
+        var hasVideo = _currentVideo is { };
+        FindSubtitleButton.IsEnabled = hasVideo;
+        ManualSubtitleSearchButton.IsEnabled = hasVideo;
+        SubtitleSearchQueryBox.IsEnabled = hasVideo;
+        SynchronizeSubtitleButton.IsEnabled = hasVideo;
+        AddSubtitleButton.IsEnabled = hasVideo;
+        SubtitleDelayEarlierButton.IsEnabled = hasVideo;
+        SubtitleDelayLaterButton.IsEnabled = hasVideo;
+        SubtitleDelayResetButton.IsEnabled = hasVideo && Math.Abs(_subtitleDelaySeconds) > 0.001;
+
+        LocalFolderSubtitleList.Items.Clear();
+        if (_currentVideo is { } videoPath)
+        {
+            var localFiles = MediaPathRules.FindAllSubtitlesBesideVideo(videoPath);
+            foreach (var file in localFiles)
+            {
+                var fileName = Path.GetFileName(file);
+                var isLoaded = _loadedSubtitles.Contains(Path.GetFullPath(file))
+                    || PathsEqual(_selectedExternalSubtitlePath, file);
+                var item = new ListBoxItem
+                {
+                    Content = isLoaded ? $"✓ {fileName} (Aktif)" : fileName,
+                    Tag = file,
+                    Foreground = isLoaded ? Brush.Parse("#00BC7D") : Brush.Parse("#F2F2F2")
+                };
+                ToolTip.SetTip(item, fileName);
+                LocalFolderSubtitleList.Items.Add(item);
+            }
+            NoLocalSubtitlesNotice.IsVisible = localFiles.Count == 0;
+        }
+        else
+        {
+            NoLocalSubtitlesNotice.IsVisible = true;
+        }
         NoSubtitlesNotice.IsVisible = SubtitleTrackList.Items.Count <= 1;
     }
 
@@ -385,6 +534,7 @@ public sealed partial class MainWindow
                 var label = $"{candidate.Release} [{candidate.Language}] · ⬇ {candidate.Downloads}";
                 if (candidate.HashMatch) label = "★ " + label;
                 var item = new ListBoxItem { Content = label, Tag = candidate };
+                ToolTip.SetTip(item, label);
                 OnlineSearchResultsList.Items.Add(item);
             }
         }

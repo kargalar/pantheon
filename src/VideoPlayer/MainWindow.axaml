@@ -94,11 +94,18 @@
               </Grid>
               <TextBlock x:Name="WordCardTranslation" FontSize="22" FontWeight="SemiBold" Foreground="#F5F5F5" TextWrapping="Wrap" />
               <TextBlock x:Name="WordCardAlternatives" FontSize="12" Foreground="#A7A7A7" TextWrapping="Wrap" IsVisible="False" />
-              <Border x:Name="WordCardSentenceBox" Background="#1F1F1F" CornerRadius="8" Padding="9,7" IsVisible="False">
-                <TextBlock x:Name="WordCardSentence" FontSize="12" FontStyle="Italic" Foreground="#C9C9C9" TextWrapping="Wrap" />
-              </Border>
               <Border Height="1" Background="#2D2D2D" />
               <TextBlock x:Name="WordCardHint" FontSize="11" Foreground="#858585" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+          <Border x:Name="SentenceCard" IsVisible="False" Width="380" MaxWidth="380"
+                  Background="#F2151515" BorderBrush="#454545" BorderThickness="1" CornerRadius="16" Padding="16,13">
+            <Border.Effect>
+              <DropShadowEffect BlurRadius="28" OffsetX="0" OffsetY="8" Color="#000000" Opacity="0.55" />
+            </Border.Effect>
+            <StackPanel Spacing="7">
+              <TextBlock x:Name="SentenceCardText" FontSize="13" FontWeight="SemiBold" Foreground="#FFD54A" TextWrapping="Wrap" />
+              <TextBlock x:Name="SentenceCardTranslation" FontSize="18" FontWeight="SemiBold" Foreground="#F5F5F5" TextWrapping="Wrap" />
             </StackPanel>
           </Border>
         </Canvas>
@@ -179,7 +186,15 @@
             <TextBlock x:Name="TimeLabel" Grid.Column="1" Text="00:00 / 00:00" Foreground="#C4C4C4" FontSize="12" VerticalAlignment="Center" Margin="8,0" Background="Transparent" />
             <TextBlock x:Name="SpeedLabel" Grid.Column="2" Text="1.00&#215;" Foreground="#A7A7A7" FontSize="12" VerticalAlignment="Center" Margin="4,0" />
             <Grid Grid.Column="3" MinHeight="20">
-              <Slider x:Name="SeekSlider" Minimum="0" Maximum="100" Value="0" IsEnabled="False" ToolTip.Tip="{x:Static core:UiText.DragToSeekHoldAndPullUpwardFor}" AutomationProperties.Name="{x:Static core:UiText.PlaybackPosition}" />
+              <Slider x:Name="SeekSlider" Minimum="0" Maximum="100" Value="0" IsEnabled="False" ToolTip.Tip="{x:Static core:UiText.DragToSeekHoldAndPullUpwardFor}" AutomationProperties.Name="{x:Static core:UiText.PlaybackPosition}">
+                <Slider.Resources>
+                  <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#E53935" />
+                  <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#E53935" />
+                  <SolidColorBrush x:Key="SliderThumbBackground" Color="#E53935" />
+                  <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="#E53935" />
+                  <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="#E53935" />
+                </Slider.Resources>
+              </Slider>
               <Canvas x:Name="ChapterMarkers" IsHitTestVisible="False" />
               <Border x:Name="SeekPreviewPanel" Grid.ColumnSpan="5" IsVisible="False" Width="1380" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="#181818" BorderBrush="#444444" BorderThickness="1" CornerRadius="10" Padding="8" Margin="0,0,0,8" IsHitTestVisible="False">
                 <StackPanel Spacing="4">
@@ -212,8 +227,8 @@
             <Button x:Name="VocabularyButton" Grid.Column="8" Content="📖" Width="36" Height="36" Padding="0" FontSize="15" ToolTip.Tip="Bilinmeyen kelimeler listesi" AutomationProperties.Name="Bilinmeyen kelimeler listesi" />
             <Button x:Name="HardwareAccelerationButton" Grid.Column="9" Content="&#x25A6;" Width="36" Height="36" Padding="0" FontSize="17" ToolTip.Tip="{x:Static core:UiText.ToggleHardwareAcceleration}" AutomationProperties.Name="{x:Static core:UiText.EnableHardwareAcceleration}" />
           </Grid>
-          <Popup x:Name="AudioTrackPickerPopup" PlacementTarget="{Binding #AudioTrackButton}" Placement="Top" IsOpen="False" IsLightDismissEnabled="True">
-            <Border Background="#181818" BorderBrush="#383838" BorderThickness="1" CornerRadius="12" Padding="12" Width="300" MaxHeight="260">
+          <Popup x:Name="AudioTrackPickerPopup" PlacementTarget="{Binding #AudioTrackButton}" Placement="TopEdgeAlignedRight" VerticalOffset="-8" IsOpen="False" IsLightDismissEnabled="True">
+            <Border x:Name="AudioTrackPickerContent" Background="#181818" BorderBrush="#383838" BorderThickness="1" CornerRadius="12" Padding="12" Width="300" MaxHeight="260">
               <StackPanel Spacing="8">
                 <TextBlock Text="{x:Static core:UiText.AudioTrack}" FontWeight="SemiBold" FontSize="13" Foreground="#F2F2F2" />
                 <ListBox x:Name="AudioTrackList" MaxHeight="210" Background="#121212" Foreground="#F2F2F2"
@@ -221,74 +236,118 @@
               </StackPanel>
             </Border>
           </Popup>
-          <Popup x:Name="SubtitlePickerPopup" PlacementTarget="{Binding #SubtitleButton}" Placement="Top" IsOpen="False" IsLightDismissEnabled="True">
-            <Border x:Name="SubtitlePickerContent" Background="#181818" BorderBrush="#383838" BorderThickness="1" CornerRadius="12" Padding="12" Width="360" MaxHeight="520">
+          <Popup x:Name="SubtitlePickerPopup" PlacementTarget="{Binding #SubtitleButton}" Placement="TopEdgeAlignedRight" VerticalOffset="-8" IsOpen="False" IsLightDismissEnabled="True">
+            <Border x:Name="SubtitlePickerContent" Background="#181818" BorderBrush="#383838" BorderThickness="1" CornerRadius="14" Padding="14" Width="700" MaxHeight="580">
               <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel Spacing="10">
-                  <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Text="Altyazı Yönetimi" FontWeight="SemiBold" FontSize="13" Foreground="#F2F2F2" VerticalAlignment="Center" />
-                    <Button x:Name="CloseSubtitlePopupButton" Grid.Column="1" Content="✕" Width="28" Height="28" Padding="0" Classes="caption" />
+                <StackPanel Spacing="12">
+                  <!-- Başlık ve Hızlı Görünürlük -->
+                  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                    <StackPanel Spacing="2" VerticalAlignment="Center">
+                      <TextBlock Text="Altyazı Yönetimi" FontWeight="SemiBold" FontSize="14" Foreground="#F2F2F2" />
+                      <TextBlock x:Name="ActiveSubtitleSummaryLabel" Text="Aktif altyazı yok" FontSize="11" Foreground="#9A9A9A" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <Button x:Name="ToggleSubtitlesVisibilityButton" Grid.Column="1" Content="Altyazı: Açık" Height="30" Padding="12,0" FontSize="12" ToolTip.Tip="Altyazı görünürlüğünü aç/kapat" />
+                    <Button x:Name="CloseSubtitlePopupButton" Grid.Column="2" Content="✕" Width="30" Height="30" Padding="0" Classes="caption" ToolTip.Tip="Paneli kapat (Esc)" />
                   </Grid>
 
                   <Border Height="1" Background="#2D2D2D" />
 
-                  <!-- Mevcut Altyazılar -->
-                  <StackPanel Spacing="4">
-                    <TextBlock Text="Mevcut Altyazı Parçaları" FontSize="12" FontWeight="SemiBold" Foreground="#A7A7A7" />
-                    <TextBlock x:Name="NoSubtitlesNotice" Text="Mevcut veya seçili altyazı yok." Foreground="#707070" FontSize="11" IsVisible="False" Margin="4,2" />
-                    <ListBox x:Name="SubtitleTrackList" MaxHeight="130" Background="#121212" Foreground="#F2F2F2"
-                             BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="8" AutomationProperties.Name="{x:Static core:UiText.SelectSubtitleTrack}" />
-                  </StackPanel>
+                  <!-- İki Sütunlu Ana İçerik -->
+                  <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <!-- Sol Sütun: Parçalar, Klasör Dosyaları ve Hızlı Ayarlar -->
+                    <StackPanel Grid.Column="0" Spacing="10">
+                      <!-- Mevcut Altyazı Parçaları -->
+                      <Border Background="#131313" BorderBrush="#262626" BorderThickness="1" CornerRadius="10" Padding="10">
+                        <StackPanel Spacing="6">
+                          <TextBlock Text="Mevcut Altyazı Parçaları" FontSize="12" FontWeight="SemiBold" Foreground="#B5B5B5" />
+                          <TextBlock x:Name="NoSubtitlesNotice" Text="Gömülü veya yüklü altyazı parçası yok." Foreground="#7A7A7A" FontSize="11" IsVisible="False" Margin="2,0" />
+                          <ListBox x:Name="SubtitleTrackList" MaxHeight="116" Background="#0F0F0F" Foreground="#F2F2F2"
+                                   BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="8" AutomationProperties.Name="{x:Static core:UiText.SelectSubtitleTrack}" />
+                        </StackPanel>
+                      </Border>
 
-                  <!-- Klasördeki Altyazılar -->
-                  <StackPanel Spacing="4">
-                    <TextBlock Text="Klasörde Bulunan Altyazılar" FontSize="12" FontWeight="SemiBold" Foreground="#A7A7A7" />
-                    <TextBlock x:Name="NoLocalSubtitlesNotice" Text="Video klasöründe altyazı dosyası bulunamadı." Foreground="#707070" FontSize="11" IsVisible="False" Margin="4,2" />
-                    <ListBox x:Name="LocalFolderSubtitleList" MaxHeight="110" Background="#121212" Foreground="#F2F2F2"
-                             BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="8" />
-                  </StackPanel>
+                      <!-- Klasördeki Altyazılar + Dosya Ekle -->
+                      <Border Background="#131313" BorderBrush="#262626" BorderThickness="1" CornerRadius="10" Padding="10">
+                        <StackPanel Spacing="6">
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <TextBlock Text="Klasörde Bulunan Altyazılar" FontSize="12" FontWeight="SemiBold" Foreground="#B5B5B5" VerticalAlignment="Center" />
+                            <Button x:Name="AddSubtitleButton" Grid.Column="1" Content="+ Dosya Ekle..." Height="26" Padding="10,0" FontSize="11" ToolTip.Tip="Bilgisayardan altyazı dosyası seç" />
+                          </Grid>
+                          <TextBlock x:Name="NoLocalSubtitlesNotice" Text="Video klasöründe altyazı dosyası bulunamadı." Foreground="#7A7A7A" FontSize="11" IsVisible="False" Margin="2,0" />
+                          <ListBox x:Name="LocalFolderSubtitleList" MaxHeight="106" Background="#0F0F0F" Foreground="#F2F2F2"
+                                   BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="8" />
+                        </StackPanel>
+                      </Border>
 
-                  <!-- Online Arama -->
-                  <StackPanel Spacing="6">
-                    <TextBlock Text="Online Altyazı (OpenSubtitles)" FontSize="12" FontWeight="SemiBold" Foreground="#A7A7A7" />
-                    <CheckBox x:Name="AutoFindSubtitlesCheckBox" Content="Video açılınca otomatik ara ve indir" FontSize="11" Margin="2,0" />
-                    <Button x:Name="FindSubtitleButton" Content="Otomatik Online Ara" HorizontalAlignment="Stretch" />
+                      <!-- Zamanlama ve Görünüm -->
+                      <Border Background="#131313" BorderBrush="#262626" BorderThickness="1" CornerRadius="10" Padding="10">
+                        <StackPanel Spacing="8">
+                          <TextBlock Text="Hızlı Ayarlar (Zamanlama &amp; Görünüm)" FontSize="12" FontWeight="SemiBold" Foreground="#B5B5B5" />
+                          <Grid ColumnDefinitions="74,Auto,*,Auto,Auto" ColumnSpacing="6">
+                            <TextBlock Text="Zamanlama" FontSize="11.5" Foreground="#A7A7A7" VerticalAlignment="Center" />
+                            <Button x:Name="SubtitleDelayEarlierButton" Grid.Column="1" Content="−" Width="30" Height="28" Padding="0" FontSize="13" ToolTip.Tip="Altyazıyı erkene al" />
+                            <TextBlock x:Name="SubtitleDelayValueLabel" Grid.Column="2" Text="+0.00 sn" FontSize="12" FontWeight="SemiBold" Foreground="#F2F2F2" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <Button x:Name="SubtitleDelayLaterButton" Grid.Column="3" Content="+" Width="30" Height="28" Padding="0" FontSize="13" ToolTip.Tip="Altyazıyı geciktir" />
+                            <Button x:Name="SubtitleDelayResetButton" Grid.Column="4" Content="Sıfırla" Height="28" Padding="9,0" FontSize="11" ToolTip.Tip="Zamanlamayı sıfırla" />
+                          </Grid>
+                          <Grid ColumnDefinitions="74,Auto,*,Auto" ColumnSpacing="6">
+                            <TextBlock Text="Yazı Boyutu" FontSize="11.5" Foreground="#A7A7A7" VerticalAlignment="Center" />
+                            <Button x:Name="SubtitleFontSmallerButton" Grid.Column="1" Content="A−" Width="34" Height="28" Padding="0" FontSize="11" ToolTip.Tip="Yazı boyutunu küçült" />
+                            <TextBlock x:Name="SubtitleFontSizeLabel" Grid.Column="2" Text="42 px" FontSize="12" FontWeight="SemiBold" Foreground="#F2F2F2" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <Button x:Name="SubtitleFontLargerButton" Grid.Column="3" Content="A+" Width="34" Height="28" Padding="0" FontSize="11" ToolTip.Tip="Yazı boyutunu büyüt" />
+                          </Grid>
+                          <Grid ColumnDefinitions="74,*" ColumnSpacing="6">
+                            <TextBlock Text="Kodlama" FontSize="11.5" Foreground="#A7A7A7" VerticalAlignment="Center" />
+                            <ComboBox x:Name="SubtitleCodepageSelector" Grid.Column="1" HorizontalAlignment="Stretch" Height="30" FontSize="11.5" />
+                          </Grid>
+                        </StackPanel>
+                      </Border>
+                    </StackPanel>
 
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
-                      <TextBox x:Name="SubtitleSearchQueryBox" PlaceholderText="Film / dizi adı girin..." Height="32" FontSize="12" VerticalContentAlignment="Center" />
-                      <Button x:Name="ManualSubtitleSearchButton" Grid.Column="1" Content="Ara" Height="32" Padding="12,0" />
-                    </Grid>
+                    <!-- Sağ Sütun: Online Arama, Senkronizasyon ve Kelime Çevirisi -->
+                    <StackPanel Grid.Column="1" Spacing="10">
+                      <!-- Online Arama -->
+                      <Border Background="#131313" BorderBrush="#262626" BorderThickness="1" CornerRadius="10" Padding="10">
+                        <StackPanel Spacing="7">
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <TextBlock Text="Online Altyazı (OpenSubtitles)" FontSize="12" FontWeight="SemiBold" Foreground="#B5B5B5" VerticalAlignment="Center" />
+                            <ComboBox x:Name="SubtitleSearchLanguageSelector" Grid.Column="1" Width="112" Height="28" FontSize="11" ToolTip.Tip="Arama dili" />
+                          </Grid>
+                          <CheckBox x:Name="AutoFindSubtitlesCheckBox" Content="Video açılınca otomatik ara ve indir" FontSize="11.5" Margin="2,0" />
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                            <TextBox x:Name="SubtitleSearchQueryBox" PlaceholderText="Film / dizi adı girin..." Height="32" FontSize="12" VerticalContentAlignment="Center" />
+                            <Button x:Name="ManualSubtitleSearchButton" Grid.Column="1" Content="Ara" Height="32" Padding="14,0" />
+                          </Grid>
+                          <Button x:Name="FindSubtitleButton" Content="Videoya Göre Otomatik Ara" HorizontalAlignment="Stretch" Height="32" />
+                          <ListBox x:Name="OnlineSearchResultsList" MaxHeight="140" Background="#0F0F0F" Foreground="#F2F2F2"
+                                   BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="8" IsVisible="False" />
+                        </StackPanel>
+                      </Border>
 
-                    <TextBlock x:Name="SubtitleAutomationStatus" IsVisible="False" TextWrapping="Wrap"
-                               Foreground="#00BC7D" FontSize="11" Margin="2,0" />
+                      <!-- Altyazı Senkronizasyonu -->
+                      <Border Background="#131313" BorderBrush="#262626" BorderThickness="1" CornerRadius="10" Padding="10">
+                        <StackPanel Spacing="7">
+                          <TextBlock Text="Altyazı Senkronizasyonu" FontSize="12" FontWeight="SemiBold" Foreground="#B5B5B5" />
+                          <CheckBox x:Name="AutoSynchronizeSubtitlesCheckBox" Content="Harici altyazıyı otomatik senkronize et" FontSize="11.5" Margin="2,0" />
+                          <Button x:Name="SynchronizeSubtitleButton" Content="Otomatik Altyazı Senkronizasyonu" HorizontalAlignment="Stretch" Height="32" />
+                        </StackPanel>
+                      </Border>
 
-                    <ListBox x:Name="OnlineSearchResultsList" MaxHeight="140" Background="#121212" Foreground="#F2F2F2"
-                             BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="8" IsVisible="False" />
-                  </StackPanel>
+                      <!-- Kelime Çevirisi -->
+                      <Border Background="#131313" BorderBrush="#262626" BorderThickness="1" CornerRadius="10" Padding="10">
+                        <StackPanel Spacing="7">
+                          <TextBlock Text="Kelime Çevirisi" FontSize="12" FontWeight="SemiBold" Foreground="#B5B5B5" />
+                          <CheckBox x:Name="InteractiveSubtitlesCheckBox" Content="Etkileşimli altyazı (üzerine gel: çeviri, tıkla: ekle)" FontSize="11.5" Margin="2,0" />
+                          <Button x:Name="OpenVocabularyButton" Content="Bilinmeyen Kelimeler Listesi" HorizontalAlignment="Stretch" Height="32" />
+                        </StackPanel>
+                      </Border>
+                    </StackPanel>
+                  </Grid>
 
-                  <Border Height="1" Background="#2D2D2D" />
-
-                  <!-- Altyazı Senkronizasyonu -->
-                  <StackPanel Spacing="6">
-                    <TextBlock Text="Altyazı Senkronizasyonu" FontSize="12" FontWeight="SemiBold" Foreground="#A7A7A7" />
-                    <Button x:Name="SynchronizeSubtitleButton" Content="Otomatik Altyazı Senkronizasyonu" HorizontalAlignment="Stretch" />
-                    <TextBlock x:Name="SubtitleSyncStatus" IsVisible="False" TextWrapping="Wrap"
-                               Foreground="#00BC7D" FontSize="11" Margin="2,0" />
-                  </StackPanel>
-
-                  <Border Height="1" Background="#2D2D2D" />
-
-                  <!-- Kelime çevirisi -->
-                  <StackPanel Spacing="6">
-                    <TextBlock Text="Kelime Çevirisi" FontSize="12" FontWeight="SemiBold" Foreground="#A7A7A7" />
-                    <CheckBox x:Name="InteractiveSubtitlesCheckBox" Content="Etkileşimli altyazı (üzerine gel: çeviri, tıkla: listeye ekle)" FontSize="11" Margin="2,0" />
-                    <Button x:Name="OpenVocabularyButton" Content="Bilinmeyen Kelimeler Listesi" HorizontalAlignment="Stretch" />
-                  </StackPanel>
-
-                  <Border Height="1" Background="#2D2D2D" />
-
-                  <!-- Altyazı Ekle -->
-                  <Button x:Name="AddSubtitleButton" Content="Altyazı Dosyası Ekle..." HorizontalAlignment="Stretch" />
+                  <!-- Birleşik Durum Çubuğu -->
+                  <Border x:Name="SubtitleAutomationStatusBanner" IsVisible="False" Background="#12231D" BorderBrush="#1F4D3D" BorderThickness="1" CornerRadius="8" Padding="10,7">
+                    <TextBlock x:Name="SubtitleAutomationStatus" TextWrapping="Wrap" Foreground="#00BC7D" FontSize="11.5" />
+                  </Border>
                 </StackPanel>
               </ScrollViewer>
             </Border>

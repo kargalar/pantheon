@@ -80,6 +80,7 @@ public sealed partial class MainWindow : Window
     private readonly CoalescingRefreshGate _trackMetadataRefreshGate = new(initiallyPending: true);
     private readonly CoalescingRefreshGate _chapterListRefreshGate = new();
     private readonly DispatcherTimer _subtitlePickerCloseTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
+    private DateTime _subtitlePickerDismissedByHookUtc = DateTime.MinValue;
     private readonly List<(MenuItem Item, bool IsHeader)> _autoHideMenuItems = [];
     private string? _trackListSignature;
     private PlayerPreferences _preferences;
@@ -853,6 +854,7 @@ public sealed partial class MainWindow : Window
         Player.SetProperty("sub-visibility", _preferences.SubtitlesVisible);
         UpdateSubtitleDelayTooltip();
         SavePreferences(_preferences);
+        if (SubtitlePickerPopup.IsOpen) RefreshSubtitlePickerContent();
     }
 
     private void TogglePlayback()
@@ -1586,6 +1588,7 @@ public sealed partial class MainWindow : Window
         foreach (var track in tracks)
         {
             var item = new ListBoxItem { Content = track.Label, Tag = track };
+            ToolTip.SetTip(item, track.Label);
             SubtitleTrackList.Items.Add(item);
             if (track.IsSelected) selectedItem = item;
         }
@@ -1713,23 +1716,30 @@ public sealed partial class MainWindow : Window
             {
                 _updatingTrackSelectors = false;
             }
+            if (SubtitlePickerPopup.IsOpen) RefreshSubtitlePickerContent();
         }
         catch (MpvException exception) { AppLogger.Error("Subtitle track selection failed", exception); }
     }
 
     private void ToggleSubtitlePicker()
     {
-        SubtitlePickerPopup.IsOpen = !SubtitlePickerPopup.IsOpen;
-        if (SubtitlePickerPopup.IsOpen)
+        var open = !SubtitlePickerPopup.IsOpen;
+        if (open && DateTime.UtcNow - _subtitlePickerDismissedByHookUtc < TimeSpan.FromMilliseconds(350))
+            return;
+        if (open)
         {
+            AudioTrackPickerPopup.IsOpen = false;
             RefreshSubtitlePickerContent();
         }
+        SubtitlePickerPopup.IsOpen = open;
         UpdateControlVisibility();
     }
 
     private void ToggleAudioTrackPicker()
     {
-        AudioTrackPickerPopup.IsOpen = _currentVideo is not null && !AudioTrackPickerPopup.IsOpen;
+        var open = _currentVideo is not null && !AudioTrackPickerPopup.IsOpen;
+        if (open) SubtitlePickerPopup.IsOpen = false;
+        AudioTrackPickerPopup.IsOpen = open;
         UpdateControlVisibility();
     }
 
@@ -2192,6 +2202,7 @@ public sealed partial class MainWindow : Window
         ShowSubtitleSyncNotification(_subtitleDelaySeconds - previousDelay);
         UpdateSubtitleDelayTooltip();
         SaveCurrentProgress(force: true);
+        if (SubtitlePickerPopup.IsOpen) RefreshSubtitlePickerContent();
     }
 
     private void ResetSubtitleDelay()
@@ -2204,6 +2215,7 @@ public sealed partial class MainWindow : Window
         ShowSubtitleSyncNotification(change);
         UpdateSubtitleDelayTooltip();
         SaveCurrentProgress(force: true);
+        if (SubtitlePickerPopup.IsOpen) RefreshSubtitlePickerContent();
     }
 
     private void ShowSubtitleSyncNotification(double changeSeconds)
@@ -2303,8 +2315,34 @@ public sealed partial class MainWindow : Window
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
+        if (e.Key == Key.Escape && (SubtitlePickerPopup.IsOpen || AudioTrackPickerPopup.IsOpen))
+        {
+            ClosePickerPopups();
+            e.Handled = true;
+            return;
+        }
+        if (IsTextInputFocused(e.Source)) return;
         if (ShortcutGesture.TryFromAvalonia(e.Key, e.KeyModifiers, out var gesture) && HandleShortcut(gesture))
             e.Handled = true;
+    }
+
+    private bool IsTextInputFocused(object? eventSource)
+    {
+        if (eventSource is TextBox) return true;
+        if (FocusManager?.GetFocusedElement() is TextBox) return true;
+        return TopLevel.GetTopLevel(SubtitlePickerContent)?.FocusManager?.GetFocusedElement() is TextBox;
+    }
+
+    private void ClosePickerPopups()
+    {
+        if (SubtitlePickerPopup.IsOpen) SubtitlePickerPopup.IsOpen = false;
+        if (AudioTrackPickerPopup.IsOpen) AudioTrackPickerPopup.IsOpen = false;
+    }
+
+    private void OnMouseClickOutsideWindow()
+    {
+        if (!SubtitlePickerPopup.IsOpen && !AudioTrackPickerPopup.IsOpen) return;
+        Dispatcher.UIThread.Post(ClosePickerPopups);
     }
 
     private void OnOpened(object? sender, EventArgs e)
@@ -2329,7 +2367,7 @@ public sealed partial class MainWindow : Window
             if (handle != IntPtr.Zero)
             {
                 _keyboardHook = new WindowsKeyboardHook(handle, HandleShortcut);
-                _mouseHook = new WindowsMouseHook(handle, HandleMouseGesture);
+                _mouseHook = new WindowsMouseHook(handle, HandleMouseGesture, OnMouseClickOutsideWindow);
                 _monitorBrightness = new WindowsMonitorBrightness(handle);
                 InitializeBrightness();
             }
@@ -2346,6 +2384,7 @@ public sealed partial class MainWindow : Window
         if (e.Property == BoundsProperty)
         {
             UpdateResponsiveLayout();
+            if (SubtitlePickerPopup.IsOpen) UpdateSubtitlePickerSize();
             return;
         }
 
@@ -2426,7 +2465,14 @@ public sealed partial class MainWindow : Window
 
     private void OnResizePointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (!IsPointerFromMainWindow(e) || e.KeyModifiers != KeyModifiers.None) return;
+        if (!IsPointerFromMainWindow(e)) return;
+        if (SubtitlePickerPopup.IsOpen || AudioTrackPickerPopup.IsOpen)
+        {
+            ClosePickerPopups();
+            e.Handled = true;
+            return;
+        }
+        if (e.KeyModifiers != KeyModifiers.None) return;
         var resizeEdge = GetResizeEdge(e.GetPosition(this));
         if (resizeEdge is null) return;
         BeginResizeDrag(resizeEdge.Value, e);
@@ -2474,6 +2520,13 @@ public sealed partial class MainWindow : Window
     private void OnRootPointerExited(object? sender, PointerEventArgs e)
     {
         if (!IsPointerFromMainWindow(e)) return;
+        var position = e.GetPosition(RootPanel);
+        if (position.X >= 0 && position.X < RootPanel.Bounds.Width
+            && position.Y >= 0 && position.Y < RootPanel.Bounds.Height)
+        {
+            UpdatePanelHoverState(position.X, position.Y, pointerWithinWindow: true);
+            return;
+        }
         _cursorHideTimer.Stop();
         ShowCursor();
         Cursor = null;
@@ -2486,6 +2539,15 @@ public sealed partial class MainWindow : Window
         ResetCursorHideTimer();
         if (e is PointerPressedEventArgs pressed)
         {
+            if (pressed.GetCurrentPoint(RootPanel).Properties.IsRightButtonPressed
+                && _vocabulary.Settings.Enabled && InteractiveSubtitleHost.IsVisible
+                && HitTestSubtitle(pressed.GetPosition(RootPanel)))
+            {
+                ShowSentenceCard(pressed.GetPosition(RootPanel));
+                pressed.Handled = true;
+                return;
+            }
+            CloseSentenceCard();
             if (TryClickWord(pressed))
             {
                 pressed.Handled = true;
@@ -2691,6 +2753,25 @@ public sealed partial class MainWindow : Window
             && screenY >= rootTopLeft.Y && screenY < rootBottomRight.Y;
         if (!inWindow) return false;
 
+        if (SubtitlePickerPopup.IsOpen || AudioTrackPickerPopup.IsOpen)
+        {
+            var insideSubtitlePopup = SubtitlePickerPopup.IsOpen
+                && IsPointerInsideScreen(SubtitlePickerContent, screenX, screenY);
+            var insideAudioPopup = AudioTrackPickerPopup.IsOpen
+                && IsPointerInsideScreen(AudioTrackPickerContent, screenX, screenY);
+            if (!insideSubtitlePopup && !insideAudioPopup)
+            {
+                if (gesture is MouseGesture.LeftClick or MouseGesture.RightClick or MouseGesture.MiddleClick)
+                {
+                    if (SubtitlePickerPopup.IsOpen && IsPointerInsideScreen(SubtitleButton, screenX, screenY))
+                        _subtitlePickerDismissedByHookUtc = DateTime.UtcNow;
+                    ClosePickerPopups();
+                    return true;
+                }
+                return false;
+            }
+        }
+
         var topLeft = VideoFrame.PointToScreen(new Point(0, 0));
         var bottomRight = VideoFrame.PointToScreen(new Point(VideoFrame.Bounds.Width, VideoFrame.Bounds.Height));
         var width = bottomRight.X - topLeft.X;
@@ -2701,6 +2782,18 @@ public sealed partial class MainWindow : Window
             || IsPointerInsideScreen(HeaderBar, screenX, screenY)
             || IsPointerInsideScreen(BottomBar, screenX, screenY)
             || IsPointerInsideScreen(QueuePanel, screenX, screenY))
+            return false;
+
+        // Handle subtitle right clicks before the video mouse bindings, including screenshot.
+        if (gesture == MouseGesture.RightClick && _vocabulary.Settings.Enabled
+            && IsPointerInsideScreen(InteractiveSubtitleHost, screenX, screenY))
+        {
+            ShowSentenceCard(RootPanel.PointToClient(new PixelPoint(screenX, screenY)));
+            return true;
+        }
+        if (gesture == MouseGesture.LeftClick && _vocabulary.Settings.Enabled
+            && InteractiveSubtitleHost.IsVisible
+            && HitTestWordChip(RootPanel.PointToClient(new PixelPoint(screenX, screenY))) is not null)
             return false;
 
         var isFarRight = screenX >= rootBottomRight.X - QueueRevealZoneWidth;
@@ -2722,6 +2815,7 @@ public sealed partial class MainWindow : Window
     private static bool IsPointerInsideScreen(Control control, int screenX, int screenY)
     {
         if (!control.IsVisible || control.Bounds.Width <= 0 || control.Bounds.Height <= 0) return false;
+        if (TopLevel.GetTopLevel(control) is null) return false;
         var topLeft = control.PointToScreen(new Point(0, 0));
         var bottomRight = control.PointToScreen(new Point(control.Bounds.Width, control.Bounds.Height));
         return screenX >= topLeft.X && screenX < bottomRight.X

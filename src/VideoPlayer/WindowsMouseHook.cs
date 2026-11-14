@@ -26,6 +26,7 @@ internal sealed class WindowsMouseHook : IDisposable
     private const int MiddleButtonDown = 0x0207;
     private const int MouseWheel = 0x020A;
     private const uint RootAncestor = 2;
+    private const uint GwOwner = 4;
     private const int ControlKey = 0x11;
     private const int ShiftKey = 0x10;
     private const int AltKey = 0x12;
@@ -34,16 +35,19 @@ internal sealed class WindowsMouseHook : IDisposable
 
     private readonly IntPtr _targetWindow;
     private readonly Func<MouseGesture, int, int, bool> _onGesture;
+    private readonly Action? _onOutsideClick;
     private readonly LowLevelMouseProc _callback;
     private IntPtr _hookHandle;
     private int _callbackFailureLogged;
 
     public WindowsMouseHook(
         IntPtr targetWindow,
-        Func<MouseGesture, int, int, bool> onGesture)
+        Func<MouseGesture, int, int, bool> onGesture,
+        Action? onOutsideClick = null)
     {
         _targetWindow = targetWindow;
         _onGesture = onGesture;
+        _onOutsideClick = onOutsideClick;
         _callback = HandleMouseEvent;
         _hookHandle = SetWindowsHookEx(LowLevelMouseHook, _callback, GetModuleHandle(null), 0);
         if (_hookHandle == IntPtr.Zero)
@@ -68,7 +72,13 @@ internal sealed class WindowsMouseHook : IDisposable
             var point = mouseData.Point;
             var pointedWindow = WindowFromPoint(point);
             var pointedRoot = pointedWindow == IntPtr.Zero ? IntPtr.Zero : GetAncestor(pointedWindow, RootAncestor);
-            if (pointedRoot != _targetWindow || (!isTargetForeground && !isButtonClick))
+            if (pointedRoot != _targetWindow)
+            {
+                if (isButtonClick && _onOutsideClick is not null && !IsWindowOrOwned(pointedRoot))
+                    _onOutsideClick();
+                return CallNextHookEx(_hookHandle, code, message, data);
+            }
+            if (!isTargetForeground && !isButtonClick)
                 return CallNextHookEx(_hookHandle, code, message, data);
 
             var gesture = ResolveGesture(
@@ -144,6 +154,17 @@ internal sealed class WindowsMouseHook : IDisposable
         return delta > 0 ? MouseGesture.WheelUp : MouseGesture.WheelDown;
     }
 
+    private bool IsWindowOrOwned(IntPtr rootWindow)
+    {
+        var current = rootWindow;
+        for (var depth = 0; depth < 6 && current != IntPtr.Zero; depth++)
+        {
+            if (current == _targetWindow) return true;
+            current = GetWindow(current, GwOwner);
+        }
+        return false;
+    }
+
     private static bool IsKeyDown(int virtualKey) => (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
 
     private static bool IsWinKeyDown() => IsKeyDown(LeftWinKey) || IsKeyDown(RightWinKey);
@@ -193,6 +214,9 @@ internal sealed class WindowsMouseHook : IDisposable
 
     [DllImport("user32.dll")]
     private static extern IntPtr GetAncestor(IntPtr window, uint flags);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetWindow(IntPtr window, uint command);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr GetModuleHandle(string? moduleName);

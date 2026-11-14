@@ -32,7 +32,6 @@ internal sealed class VocabularyWindow : Window
 
     private readonly CheckBox _enabledBox = new() { Content = "Etkileşimli altyazı (üzerine gel: çeviri, tıkla: listeye ekle)" };
     private readonly CheckBox _pauseBox = new() { Content = "Kelimenin üzerine gelince videoyu duraklat" };
-    private readonly CheckBox _sentenceBox = new() { Content = "Çeviri kartında cümlenin tamamını da çevir" };
     private readonly ComboBox _language = new() { MinWidth = 170 };
 
     public VocabularyWindow(VocabularyStore store)
@@ -55,7 +54,6 @@ internal sealed class VocabularyWindow : Window
 
         _enabledBox.IsCheckedChanged += (_, _) => SaveSettings();
         _pauseBox.IsCheckedChanged += (_, _) => SaveSettings();
-        _sentenceBox.IsCheckedChanged += (_, _) => SaveSettings();
         _language.SelectionChanged += (_, _) => SaveSettings();
         _search.TextChanged += (_, _) => Rebuild();
         _sort.SelectionChanged += (_, _) => Rebuild();
@@ -100,7 +98,7 @@ internal sealed class VocabularyWindow : Window
                     new TextBlock { Text = "AYARLAR", FontSize = 10, FontWeight = FontWeight.Bold, Foreground = Muted },
                     _enabledBox,
                     _pauseBox,
-                    _sentenceBox,
+                    new TextBlock { Text = "Cümleyi çevirmek için altyazıya sağ tıkla.", Foreground = Soft, TextWrapping = TextWrapping.Wrap },
                     new StackPanel
                     {
                         Orientation = Orientation.Horizontal, Spacing = 10, Margin = new Thickness(0, 4, 0, 0),
@@ -163,7 +161,6 @@ internal sealed class VocabularyWindow : Window
         var settings = _store.Settings;
         _enabledBox.IsChecked = settings.Enabled;
         _pauseBox.IsChecked = settings.PauseOnHover;
-        _sentenceBox.IsChecked = settings.ShowSentenceTranslation;
         var index = 0;
         for (var i = 0; i < _language.Items.Count; i++)
             if (_language.Items[i] is ComboBoxItem { Tag: string code }
@@ -180,7 +177,6 @@ internal sealed class VocabularyWindow : Window
         {
             Enabled = _enabledBox.IsChecked == true,
             PauseOnHover = _pauseBox.IsChecked == true,
-            ShowSentenceTranslation = _sentenceBox.IsChecked == true,
             TargetLanguage = code
         });
     }

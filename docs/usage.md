@@ -95,3 +95,5 @@ dotnet run --project .\tools\HdrScreenshotCheck -- "C:\Videos\hdr.mkv" .\artifac
 ```
 
 This checks source resolution, sRGB PNG output at up to three positions, subtitle exclusion, captures during paused and active playback, and stop/reload/resize behavior. It saves the captures and uses an isolated settings profile. Run it on the Windows desktop; ordinary libmpv playback tests do not exercise the embedded renderer.
+
+With interactive subtitles enabled, right-click the subtitle to show its full text in a separate card. Enable sentence translation in vocabulary settings to include its translation. Right-clicking elsewhere retains the configured video mouse action.
